@@ -43,9 +43,12 @@ sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return
 	
 end sub
         
+		
+sub callback_http_send_headers()
+	
+end sub
 
 sub callback_dns_ok()
-    http_dns_ok()
 	
 end sub
         

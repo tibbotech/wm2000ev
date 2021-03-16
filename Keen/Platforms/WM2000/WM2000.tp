@@ -1,11 +1,12 @@
 [platform]
 description=WM2000 Module
-version=WM2000-3.80
+version=WM2000-4.00
 rom=1728512
 ram=59392
 codebits=24
 databits=32
 sector=4096
+
 
 [transport1]
 name=udp_winpcap
@@ -24,7 +25,7 @@ name=serial
 description=Taiko Serial Transport
 device=taiko.serialdevice
 browsedlg=taiko.serialportsdlg
-
+params=921600
 
 [defineimports]
 import1=../GEN.tp
