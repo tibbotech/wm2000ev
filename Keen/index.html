@@ -1,0 +1,20 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD W3 HTML//EN">
+<head>
+</head>
+<html>
+    <body>
+
+<?
+dim f as byte
+dim s as string = "<b> hello world!</b><br/>"
+for f = 0 to 100
+	while sock.txfree<len(s) 
+	wend
+	sock.setdata(s)
+	sock.send
+next f
+?>
+
+    </body>
+</html>
+

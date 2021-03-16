@@ -1,0 +1,51 @@
+'DEFINES-------------------------------------------------------------
+#define LUIS_CONFIG_FILE "luis.xtxt"
+#define LUIS_DEBUG_PRINT 1
+#define WLN_AVAILABLE 1
+#define SIGNAL_STRENGTH_INDICATION 1
+#define WLN_CLK PL_IO_NUM_53
+#define WLN_CS PL_IO_NUM_49
+#define WLN_DI PL_IO_NUM_52
+#define WLN_DO PL_IO_NUM_50
+#define WLN_RST PL_IO_NUM_51
+#define DNS_DEBUG_PRINT 1
+#define HTTP_DEBUG_PRINT 1
+
+const FIRMWARE_VERSION="{WM2000EV 1.0.0}"
+const MAX_NUM_INTERFACES=4
+const BT_NAME="WM2000EV"
+const LUIS_BT_DEVICE_NAME="WM2000EV"
+const S1_TBT00_3_S1_CLK =  PL_IO_NUM_1_TX0
+const S1_TBT00_3_S1_DATA =  PL_IO_NUM_0_RX0
+
+'INCLUDES------------------------------------------------------------
+include "sock\trunk\sock.tbh"
+include "wln\trunk\wln.tbh"
+include "dns\trunk\dns.tbh"
+includepp "settings.xtxt"
+include "settings\trunk\settings.tbh"
+include "time\trunk\time.tbh"
+includepp "filenum.xtxt"
+include "filenum\trunk\filenum.tbh"
+include "libraries\http.tbh"
+include "libraries\luis.tbh"
+includepp "luis.xtxt"
+includepp "tables.xtxt"
+include "libraries\tables_web.tbh"
+include "tables\trunk\tables.tbh"
+include "libraries\super_i2c.tbh"
+include "libraries\tbt28.tbh"
+include "libraries\tbt29.tbh"
+include "ssi\trunk\ssi.tbh"
+'DECLARATIONS--------------------------------------------------------
+declare TBT00_3_S1_CHANNEL_NUM as byte
+declare interface_ready(MAX_NUM_INTERFACES) as no_yes
+declare DNS_socket as byte
+declare led_pattern as string
+declare live_mode as no_yes
+
+declare sub set_rgb_led(r as byte ,g as byte ,b as byte)
+declare sub close_interface_sockets(interface as pl_sock_interfaces)
+declare sub boot()
+declare sub device_proc_timer()
+declare sub device_init_keen_io()
