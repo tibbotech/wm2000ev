@@ -4,8 +4,7 @@ This repository contains the official demonstration projects that showcase the f
 
 Each project consists of a [Tibbo BASIC](https://tibbo.com/programmable.html#language) application and includes all of the necessary files for compilation in [Tibbo IDE (TIDE)](https://tibbo.com/programmable.html#tide). When opening these projects in TIDE, make sure to enable the "Check for platforms folder within the current project directory first" option inside the TIDE Preferences, as illustrated below. 
 
-<img src="./images/wm2000ev_tide_01.png" width="22%" alt="Accessing TIDE Preferences">
-<img src="./images/wm2000ev_tide_02.png" width="75%" alt="Checking for local platforms">
+<img src="./images/wm2000ev_tide_01.png" width="22%" alt="Accessing TIDE Preferences"> <img src="./images/wm2000ev_tide_02.png" width="75%" alt="Checking for local platforms">
 
 This ensures that each application uses its included libraries. Also included in the platforms folder is the firmware version that the device is intended to use for this project.
 
