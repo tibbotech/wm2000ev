@@ -45,6 +45,8 @@ end sub
         
 		
 sub callback_http_send_headers()
+
+http_send_headers("Content-Type","application/json")
 	
 end sub
 
@@ -252,11 +254,12 @@ sub callback_http_response_code_arrival(http_response as string)
 
 end sub
 
-sub callback_http_open_romfile()
+function callback_http_open_romfile() as dword
 
 	romfile.open("keen_der.cer")
+	callback_http_open_romfile=romfile.offset
 	
-end sub
+end function
 
 sub callback_http_pre_set_data(method as HTTP_REQUEST_METHODS, byref data as string)
 	dim s as string
@@ -343,7 +346,7 @@ public sub device_proc_timer()
 	dim daycounts, mincounts as word
 	dim seconds as byte
 	dim tbl_result as en_tbl_status_codes	
-	declare http_request_list as http_request_type
+	dim http_request_list as http_request_type
 	
 	device_led_play_pat()
 	
@@ -381,16 +384,16 @@ public sub device_proc_timer()
 				tbl_get_num_records(active_rec_num,NO)
 				
 				if active_rec_num>0 then
-					http_request(HTTP_POST, "https://api.keen.io/3.0/projects/"+pjid+"/events", PL_SOCK_INTERFACE_WLN,"","application/json")
+					http_request(HTTP_POST, "https://api.keen.io/3.0/projects/"+pjid+"/events", PL_SOCK_INTERFACE_WLN,"")
 				end if			
 			end if
 		end if
 	else
-		if http_request_list.http_request_in_progress=false or http_request_timeout=0 then
+		if http_request_list.state<>FREE or http_request_timeout=0 then
 			if sending_record_num=0 then
-				http_request(HTTP_POST, "https://api.keen.io/3.0/projects/"+pjid+"/events", PL_SOCK_INTERFACE_WLN,"","application/json")
-			end if
-			http_request_timeout=20
+			http_request(HTTP_POST, "https://api.keen.io/3.0/projects/"+pjid+"/events", PL_SOCK_INTERFACE_WLN,"")
+		end if
+		http_request_timeout=20
 		else
 			if http_request_timeout>0 then http_request_timeout=http_request_timeout-1
 		end if
