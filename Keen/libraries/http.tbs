@@ -57,6 +57,7 @@ sub http_set_data(data as string)
 	else
 		sock.setdata(data)
 	end if
+	http_debugprint(data)
 	
 end sub
 
@@ -572,7 +573,7 @@ function http_send_post_data(data as string) as word
 	end if	
 	http_request_item.remaining_content_length=http_request_item.remaining_content_length-http_send_post_data
 	sock.send()		
-	sys.debugprint("Remaining data length: " + str(http_request_item.remaining_content_length) +"\r\n")
+	http_debugprint("Remaining data length: " + str(http_request_item.remaining_content_length) +"\r\n")
 end function
 
 function http_encode_url(unencoded_url as string) as string

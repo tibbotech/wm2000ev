@@ -7,8 +7,9 @@ declare event_post_timer as dword
 declare sample_timer as word
 declare led_pattern_index as byte
 
+
 sub on_sys_init()
-    boot()
+	boot()
 end sub
 
 sub on_sock_data_arrival()
@@ -91,4 +92,10 @@ sub on_button_pressed()
 		led_pattern_index=1
 	end if
 	
+end sub
+
+sub on_sock_data_sent()
+
+	http_on_sock_data_sent()
+
 end sub
