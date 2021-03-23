@@ -1,21 +1,15 @@
 include "global.tbh"
 
 declare sub init_rgb_led_io()
-
 dim DNS_socket as byte
-
 
 sub boot()
     dim f as byte
-	
 	init_rgb_led_io()
-    'Tibbit 00_3 with tibbit 28 setup on socket 2
     if tbt28_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)=NG then
         sys.debugprint("SSI channel could not be allocated, using bit banging instead."+chr(10)+chr(13))
     end if
-
-	 'Tibbit 00_3 with tibbit 29 setup on socket 2
-    select case tbt29_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)
+	select case tbt29_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)
     case TBT29_WRONG_MFGID:
         sys.debugprint("DEFAULT_MFGID_INCORRECT"+chr(10)+chr(13))
         sys.halt
@@ -35,7 +29,6 @@ sub boot()
         wln.boot(0)
     end if
     
-
     'Bluetooth setup
     '================================================================
     bt.name=BT_NAME
@@ -43,8 +36,6 @@ sub boot()
     bt.txbuffrq(1)
     bt.rxbuffrq(1)
     sys.buffalloc()
-    'enable the BLE interface and wait for it to become enabled
-    '(blocking version)
     bt.enable
     while bt.enabled=NO
     wend
@@ -59,26 +50,17 @@ sub boot()
         sock.txbuffrq(1)
         sock.varbuffrq(1)
         sys.buffalloc()
-        sock.redir(PL_REDIR_SOCK0 + sock.num)
-        
+        sock.redir(PL_REDIR_SOCK0 + sock.num)        
         sock.protocol=PL_SOCK_PROTOCOL_TCP
         sock.httpportlist="80"
         sock.allowedinterfaces="WLN"
         sock.inconmode=PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
     next http_server_count
-    'visit the device ip on a browser to see index.html being served
-    '-----------------------------------------------------------------
 
     'DNS setup
     '================================================================
     DNS_socket=sock_get("DNS")
     dns_start(DNS_socket)
-    'Making a DNS query:
-    'dns_connect(PL_SOCK_INTERFACE_NET, "8.8.4.4",0)
-    'dns_query("google.com")
-    'get the response in callback_dns_answer_acquired
-    '-----------------------------------------------------------------
-
     'Setting Library Initialization
     '================================================================
     dim stg_init_code as en_stg_status_codes
@@ -101,8 +83,7 @@ sub boot()
         pat.play("R-R-~",PL_PAT_CANINT)
         sys.halt
     end select
-    '-----------------------------------------------------------------
-
+    
     'Fd(flash disk) setup
     '================================================================
     if fd.mount<>PL_FD_STATUS_OK or fd.numservicesectors<100 then
@@ -145,25 +126,24 @@ sub boot()
     tbl_web_start()
     tbl_web_set("events",true)
 	device_init_keen_io()
-'	led_pattern=stg_get("PAT",0)
 	led_pattern="R-G-B-R-G-B-R-G-B-"
     pat.play("B-B-B-",PL_PAT_CANINT)
 
 end sub
 
 sub init_rgb_led_io()
+
 	pwm.num =  PL_PWM_NUM_3
     pwm.enabled = YES
     pwm.dutycycle = 0
-    pwm.frequency = 1000
-	 	
+    pwm.frequency = 1000	 	
 	pwm.num =  PL_PWM_NUM_5
     pwm.enabled = YES
     pwm.dutycycle = 0
-    pwm.frequency = 1000
-	
+    pwm.frequency = 1000	
 	pwm.num =  PL_PWM_NUM_6
     pwm.enabled = YES
     pwm.dutycycle = 0
     pwm.frequency = 1000 
+	
 end sub 

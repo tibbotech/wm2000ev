@@ -9,16 +9,20 @@ declare led_pattern_index as byte
 
 
 sub on_sys_init()
+
 	boot()
+	
 end sub
 
 sub on_sock_data_arrival()
+
 	dns_proc_data()
     http_proc_data()
 
 end sub
 
 sub on_sys_timer()
+
 	dns_proc_timer()
     http_proc_timer()
 	device_proc_timer()
@@ -26,17 +30,12 @@ sub on_sys_timer()
 end sub
 
 sub on_sys_dhcp_ok(renew as enum no_yes, interface as enum pl_sock_interfaces, ip as string(16), gateway_ip as string(16), netmask as string(16), lease_time as dword)
-	' TODO: place "on_sys_dhcp_ok" event handler code here...
 
 	if renew=YES and wln.ip<>ip then
 		'this is a lease renewal and the DHCP server has issues new IP
 		'it is better to reboot than deal with the implications of the changed IP
 		sys.reboot
 	end if
-
-	#if DEV_DEBUG_PRINT
-		dev_debugprint("WLN DHCP OK ("+ip+")")
-	#endif
 
 	if wln.ip<>ip then
 		sock.inconenabledmaster=NO
@@ -47,8 +46,8 @@ sub on_sys_dhcp_ok(renew as enum no_yes, interface as enum pl_sock_interfaces, i
 		sock.inconenabledmaster=YES
 	end if
 	
-	sys.debugprint("\x0AIP: "+wln.ip)
-	event_post_timer=1
+	sys.debugprint("\x0AIP: "+wln.ip+"\r\n")
+	event_post_timer=0
 end sub
 
 sub on_sock_event(newstate as pl_sock_state,newstatesimple as pl_sock_state_simple)
@@ -75,12 +74,9 @@ sub on_bt_data_arrival()
 
 end sub
 
-'dim pressed_times as byte = 0
 sub on_button_pressed()
 
-
 	'pause led pattern 
-	http_request_long(HTTP_POST, "https://api.keen.io/3.0/projects/"+stg_get("PJID",0) 	+"/events/sensors", PL_SOCK_INTERFACE_WLN,len(post_data))
 	if led_pattern_index<>255 then
 		set_rgb_led(100,100,100)
 		led_pattern_index=255

@@ -1,6 +1,6 @@
 include "global.tbh"
 
-const SENSOR_SAMPLING_TIME=20 'one minutes
+const SENSOR_SAMPLING_TIME=120 'one minutes
 const EVENTS_SENDING_LOT=3
 
 dim sample_timer as word=SENSOR_SAMPLING_TIME
@@ -30,271 +30,6 @@ declare sub time_to_str(byref ts_str as string(20),
 	byref time_second_byte as byte)
 	dim time_year_str, time_month_str, time_date_str, time_hour_str, time_minute_str, time_second_str as string(4)
 
-
-
-sub callback_dns_failure(status as en_dns_status_codes)
-
-    http_dns_failure()
-
-end sub
-        
-sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
-    http_dns_answer_acquired(return_type, return_string)
-    sys.debugprint("DNS:" + ddstr(return_string) + "\r\n")
-	
-end sub
-        
-		
-sub callback_http_send_headers()
-
-	http_send_headers("Content-Type","application/json")
-	http_send_headers("Authorization",stg_get("WKEY",0))
-	
-end sub
-
-sub callback_dns_ok()
-	
-end sub
-        
-
-sub callback_dns_pre_buffrq(num_of_pages_required as byte)
-    
-end sub
-        
-
-sub callback_dns_buff_released()
-    
-end sub
-        
-sub close_interface_sockets(interface as pl_sock_interfaces)
-	dim f,sock_num_bup as byte
-	dim i as word
-	
-	sock_num_bup=sock.num
-	
-	for f=0 to sock.numofsock-1
-		sock.num=f
-		if sock.currentinterface=interface and sock.statesimple<>PL_SSTS_CLOSED then
-			sock.discard
-		end if
-	next f
-
-	i=sys.timercount
-
-wait_close_interface_sockets:
-	for f=0 to sock.numofsock-1
-		sock.num=f
-		if sock.currentinterface=interface and sock.statesimple<>PL_SSTS_CLOSED and sys.timercount-i<3 and sys.timercount>=i then
-			goto wait_close_interface_sockets
-		end if
-	next f
-
-	sock.num=sock_num_bup
-	
-end sub
-                
-
-sub callback_wln_failure(wln_state as en_wln_status_codes)
-    
-end sub
-        
-sub callback_wln_ok()
-    
-end sub
-
-sub callback_wln_starting_association()
-   
-end sub
-        
-sub callback_wln_pre_buffrq(required_buff_pages as byte)
-    
-end sub
-        
-sub callback_wln_mkey_progress_update(progress as byte)
-    
-end sub
-        
-sub callback_wln_rescan_result(current_rssi as byte, scan_rssi as byte, different_ap as no_yes)
-    
-end sub
-        
-sub callback_wln_rescan_for_better_ap()
-    
-end sub
-
-            
-sub callback_stg_error(byref stg_name_or_num as string,index as byte,status as en_stg_status_codes)
-    
-end sub
-        
-sub callback_stg_pre_get(byref stg_name_or_num as string,index as byte,byref stg_value as string)
-    
-end sub
-        
-sub callback_stg_post_set(byref stg_name_or_num as string, index as byte,byref stg_value as string)
-
-    select case stg_name_or_num
-	case "PAT":
-		led_pattern=stg_value
-		led_pattern_index=1
-	case "WKEY":
-		wkey=stg_value
-	case "RKEY":
-		rkey=stg_value
-	case "PJID":
-		pjid=stg_value
-	case else:
-	end select
-end sub
-        
-function callback_stg_vm_read(address as word) as byte
-    
-end function
-        
-sub callback_stg_vm_write(data_to_write as byte, address as word)
-    
-end sub
-sub callback_http_reponse_code_arrival(http_response as string)
-
-end sub
-
-sub callback_http_request_failed(error_message as string)
-end sub
-
-sub callback_http_header_arrival(header_type as string, header_value as string)
-	
-	if header_type="Date" then
-		'Mon, 08 Feb 2021 03:16:19 GMT
-		dim daycounts, mincounts as word
-		dim curr_daycounts, curr_mincounts as word
-		dim syear,smonth,sdate,shour,smin as string(4)
-		dim b as byte
-		
-		syear=mid(header_value,15,2)
-		smonth=mid(header_value,9,3)
-		sdate=mid(header_value,6,2)
-		shour=mid(header_value,18,2)
-		smin=mid(header_value,21,2)
-		
-		select case smonth
-		case "Jan": smonth="01"
-		case "Feb": smonth="02"
-		case "Mar": smonth="03"
-		case "Apr": smonth="04"
-		case "May": smonth="05"
-		case "Jun": smonth="06"
-		case "Jul": smonth="07"
-		case "Aug": smonth="08"
-		case "Sep": smonth="09"
-		case "Oct": smonth="10"
-		case "Nov": smonth="11"
-		case "Dec": smonth="12"
-		case else:
-		end select
-		daycounts=daycount(val(syear),val(smonth),val(sdate))
-		mincounts=mincount(val(shour),val(smin))
-		
-		rtc.getdata(curr_daycounts,curr_mincounts, b)
-		if curr_daycounts<>daycounts or curr_mincounts<>mincounts then
-			rtc.setdata(daycounts,mincounts,b)
-		end if
-		
-	end if
-end sub
-
-sub callback_http_headers_complete()
-
-end sub
-
-sub callback_http_content_arrival(data as string)
-
-end sub
-
-sub callback_http_post_data_sent_ok()
-	
-end sub
-
-sub callback_http_send_post_data(remaining_content_length as dword)
-	 http_send_post_data(post_data)
-end sub
-
-sub callback_http_request_complete()
-
-	dim i as byte
-	dim active_rec_num as word
-	tbl_select("events","events")
-	if sending_record_num>0 then
-		if last_http_response<>"201" then
-			pat.play("R-~",PL_PAT_CANINT)
-			sample_timer=SENSOR_SAMPLING_TIME
-			exit sub
-		else
-			pat.play("GGGG-",PL_PAT_CANINT)
-		end if
-
-		for i=1 to sending_record_num
-			tbl_record_delete(1)
-		next i					
-		
-		tbl_get_num_records(active_rec_num,NO)
-		
-		if active_rec_num>0 then
-			send_http_sensor_data()
-		end if			
-	end if
-
-end sub
-
-sub callback_http_response_code_arrival(http_response as string)
-	
-	last_http_response=http_response
-
-	
-
-end sub
-
-function callback_http_open_romfile() as dword
-
-	romfile.open("keen_der.cer")
-	callback_http_open_romfile=romfile.offset
-	
-end function
-
-sub callback_luis_bt_connected()
-    
-end sub
-        
-sub callback_luis_bt_disconnected()
-    
-end sub
-        
-sub callback_luis_bt_enabled()
-    
-end sub
-        
-sub callback_luis_bt_disabled()
-    
-end sub
-        
-sub callback_luis_buzz_command()
-    
-end sub
-        
-sub callback_tbl_error(status as en_tbl_status_codes)
-    
-end sub
-        
-function callback_tbl_fail_to_open(byref filename as string, status as pl_fd_status_codes, filenum as byte) as no_yes
-    
-end function
-        
-sub callback_tbl_field_error(byref file_name as string,byref field_name as string,tbl_result as en_tbl_status_codes)
-    
-end sub
-        
-sub callback_tbl_modified(byref file_name as string, modified_operation as en_tbl_modified_operation)
-    
-end sub
 
 public sub device_proc_timer()
 
@@ -332,7 +67,6 @@ public sub device_proc_timer()
 			send_http_sensor_data()
 		end if			
 	end if
-
 	
 end sub
 
@@ -427,7 +161,7 @@ function construct_events() as string
 	else
 		construct_events=left(construct_events,len(construct_events)-1)+"]}"
 	end if
-'	sys.debugprint(construct_events)
+
 end function
 
 sub set_rgb_led(r as byte ,g as byte ,b as byte)
@@ -479,4 +213,255 @@ sub device_init_keen_io()
 	wkey=stg_get("WKEY",0)
 	rkey=stg_get("RKEY",0)
 	pjid=stg_get("PJID",0) 	
+	event_post_timer=val(stg_get("EPT",0))
+	event_post_timer=event_post_timer*120
+end sub
+     
+sub close_interface_sockets(interface as pl_sock_interfaces)
+	dim f,sock_num_bup as byte
+	dim i as word
+	
+	sock_num_bup=sock.num
+	
+	for f=0 to sock.numofsock-1
+		sock.num=f
+		if sock.currentinterface=interface and sock.statesimple<>PL_SSTS_CLOSED then
+			sock.discard
+		end if
+	next f
+
+	i=sys.timercount
+
+wait_close_interface_sockets:
+	for f=0 to sock.numofsock-1
+		sock.num=f
+		if sock.currentinterface=interface and sock.statesimple<>PL_SSTS_CLOSED and sys.timercount-i<3 and sys.timercount>=i then
+			goto wait_close_interface_sockets
+		end if
+	next f
+
+	sock.num=sock_num_bup
+	
+end sub
+                        
+sub callback_stg_post_set(byref stg_name_or_num as string, index as byte,byref stg_value as string)
+
+    select case stg_name_or_num
+	case "PAT":
+		led_pattern=stg_value
+		led_pattern_index=1
+	case "WKEY":
+		wkey=stg_value
+	case "RKEY":
+		rkey=stg_value
+	case "PJID":
+		pjid=stg_value
+	case else:
+	end select
+end sub
+        
+sub callback_http_header_arrival(header_type as string, header_value as string)
+	
+	if header_type="Date" then
+		'Mon, 08 Feb 2021 03:16:19 GMT
+		dim daycounts, mincounts as word
+		dim curr_daycounts, curr_mincounts as word
+		dim syear,smonth,sdate,shour,smin as string(4)
+		dim b as byte
+		
+		syear=mid(header_value,15,2)
+		smonth=mid(header_value,9,3)
+		sdate=mid(header_value,6,2)
+		shour=mid(header_value,18,2)
+		smin=mid(header_value,21,2)
+		
+		select case smonth
+		case "Jan": smonth="01"
+		case "Feb": smonth="02"
+		case "Mar": smonth="03"
+		case "Apr": smonth="04"
+		case "May": smonth="05"
+		case "Jun": smonth="06"
+		case "Jul": smonth="07"
+		case "Aug": smonth="08"
+		case "Sep": smonth="09"
+		case "Oct": smonth="10"
+		case "Nov": smonth="11"
+		case "Dec": smonth="12"
+		case else:
+		end select
+		daycounts=daycount(val(syear),val(smonth),val(sdate))
+		mincounts=mincount(val(shour),val(smin))
+		
+		rtc.getdata(curr_daycounts,curr_mincounts, b)
+		if curr_daycounts<>daycounts or curr_mincounts<>mincounts then
+			rtc.setdata(daycounts,mincounts,b)
+		end if
+		
+	end if
+end sub
+
+sub callback_http_request_complete()
+
+	dim i as byte
+	dim active_rec_num as word
+	tbl_select("events","events")
+	if sending_record_num>0 then
+		if last_http_response<>"201" then
+			pat.play("R-~",PL_PAT_CANINT)
+			sample_timer=SENSOR_SAMPLING_TIME
+			exit sub
+		else
+			pat.play("GGGG-",PL_PAT_CANINT)
+		end if
+
+		for i=1 to sending_record_num
+			tbl_record_delete(1)
+		next i					
+		
+		tbl_get_num_records(active_rec_num,NO)
+		
+		if active_rec_num>0 then
+			send_http_sensor_data()
+		end if			
+	end if
+
+end sub
+
+sub callback_http_send_post_data(remaining_content_length as dword)
+	 http_send_post_data(post_data)
+end sub
+
+sub callback_http_request_failed(error_message as string)
+	event_post_timer=0
+end sub
+
+sub callback_http_response_code_arrival(http_response as string)
+	last_http_response=http_response
+end sub
+
+function callback_http_open_romfile() as dword
+	romfile.open("keen_der.cer")
+	callback_http_open_romfile=romfile.offset
+end function
+
+sub callback_dns_failure(status as en_dns_status_codes)
+    http_dns_failure()
+end sub
+        
+sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
+    http_dns_answer_acquired(return_type, return_string)
+    sys.debugprint("DNS:" + ddstr(return_string) + "\r\n")	
+end sub    
+		
+sub callback_http_send_headers()
+	http_send_headers("Content-Type","application/json")
+	http_send_headers("Authorization",wkey)	
+end sub
+
+sub callback_luis_bt_connected()
+    
+end sub
+        
+sub callback_luis_bt_disconnected()
+    
+end sub
+        
+sub callback_luis_bt_enabled()
+    
+end sub
+        
+sub callback_luis_bt_disabled()
+    
+end sub
+        
+sub callback_luis_buzz_command()
+    
+end sub
+        
+sub callback_tbl_error(status as en_tbl_status_codes)
+    
+end sub
+        
+function callback_tbl_fail_to_open(byref filename as string, status as pl_fd_status_codes, filenum as byte) as no_yes
+    
+end function
+        
+sub callback_tbl_field_error(byref file_name as string,byref field_name as string,tbl_result as en_tbl_status_codes)
+    
+end sub
+        
+sub callback_tbl_modified(byref file_name as string, modified_operation as en_tbl_modified_operation)
+    
+end sub
+
+sub callback_http_headers_complete()
+
+end sub
+
+sub callback_http_content_arrival(data as string)
+
+end sub
+
+sub callback_http_post_data_sent_ok()
+	
+end sub
+
+function callback_stg_vm_read(address as word) as byte
+    
+end function
+        
+sub callback_stg_vm_write(data_to_write as byte, address as word)
+    
+end sub
+sub callback_http_reponse_code_arrival(http_response as string)
+
+end sub
+
+sub callback_wln_failure(wln_state as en_wln_status_codes)
+    
+end sub
+        
+sub callback_wln_ok()
+    
+end sub
+
+sub callback_wln_starting_association()
+   
+end sub
+        
+sub callback_wln_pre_buffrq(required_buff_pages as byte)
+    
+end sub
+        
+sub callback_wln_mkey_progress_update(progress as byte)
+    
+end sub
+        
+sub callback_wln_rescan_result(current_rssi as byte, scan_rssi as byte, different_ap as no_yes)
+    
+end sub
+        
+sub callback_wln_rescan_for_better_ap()
+    
+end sub
+            
+sub callback_stg_error(byref stg_name_or_num as string,index as byte,status as en_stg_status_codes)
+    
+end sub
+        
+sub callback_stg_pre_get(byref stg_name_or_num as string,index as byte,byref stg_value as string)
+    
+end sub
+
+sub callback_dns_ok()
+	
+end sub        
+
+sub callback_dns_pre_buffrq(num_of_pages_required as byte)
+    
+end sub
+        
+sub callback_dns_buff_released()
+    
 end sub
