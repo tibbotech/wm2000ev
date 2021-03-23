@@ -78,13 +78,9 @@ end sub
 'dim pressed_times as byte = 0
 sub on_button_pressed()
 
-'	if live_mode=YES then
-'		live_mode=NO
-'	else
-'		live_mode=YES
-'	end if
-	
-	'pause led pattern
+
+	'pause led pattern 
+	http_request_long(HTTP_POST, "https://api.keen.io/3.0/projects/"+stg_get("PJID",0) 	+"/events/sensors", PL_SOCK_INTERFACE_WLN,len(post_data))
 	if led_pattern_index<>255 then
 		set_rgb_led(100,100,100)
 		led_pattern_index=255

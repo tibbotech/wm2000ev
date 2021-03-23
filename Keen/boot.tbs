@@ -144,7 +144,6 @@ sub boot()
 
     tbl_web_start()
     tbl_web_set("events",true)
-	
 	device_init_keen_io()
 '	led_pattern=stg_get("PAT",0)
 	led_pattern="R-G-B-R-G-B-R-G-B-"
