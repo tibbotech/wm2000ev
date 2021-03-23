@@ -1,6 +1,6 @@
 include "global.tbh"
 
-const SENSOR_SAMPLING_TIME=20 'one minutes
+const SENSOR_SAMPLING_TIME=20 'Every 10 seconds
 const EVENTS_SENDING_LOT=3
 const EVENT_OPENING = "{\x22sensors\x22:["
 const EVENT_CLOSING = "]}"
