@@ -2,10 +2,14 @@ include "global.tbh"
 
 const SENSOR_SAMPLING_TIME=120 'one minutes
 const EVENTS_SENDING_LOT=3
+const EVENT_OPENING = "{\x22sensors\x22:["
+const EVENT_CLOSING = "]}"
 
 dim sample_timer as word=SENSOR_SAMPLING_TIME
 dim event_post_timer as dword
-dim sending_record_num as byte=0
+dim sending_record_num as word=0
+dim current_record_num as word=0
+dim last_active_record_num as word=0
 dim led_pattern_index as byte=1
 dim led_pattern as string
 dim wkey,rkey,pjid as string
@@ -18,6 +22,7 @@ dim post_data as string
 dim last_http_response as string
 declare function construct_events() as string
 declare sub device_led_play_pat()
+declare function get_event(byref rec_num as word) as string	
 
 declare sub str_to_time(byref ts_str as string(20),	
 	byref time_daycount as word,
@@ -73,10 +78,30 @@ end sub
 sub send_http_sensor_data()
 				
 	if http_request_item.state=FREE then
-		post_data = construct_events()
-		if post_data<>"" then
-			http_request_long(HTTP_POST, "https://api.keen.io/3.0/projects/"+pjid+"/events/sensors", PL_SOCK_INTERFACE_WLN,len(post_data))
-		end if
+		dim data_length as dword = len(EVENT_OPENING) + len(EVENT_CLOSING) - 1 ' remove comma
+		dim active_rec_num as word
+		dim i as word = 0
+		dim row as string
+		dim record_num as word = 1
+		sending_record_num = 0
+		last_active_record_num = 0
+		tbl_select("events","events")
+		tbl_get_num_records(active_rec_num,NO)
+		for i=1 to active_rec_num
+			if tbl_record_read_active(record_num)=EN_TBL_STATUS_OK then
+				row = get_event(record_num)
+				record_num = record_num + 1
+			else
+				row = ""
+			end if
+			if len(row)=0 then
+				exit sub
+			end if
+			data_length = data_length + len(row)
+			sending_record_num = sending_record_num + 1
+		next i
+		current_record_num = 0
+		http_request_long(HTTP_POST, "https://api.keen.io/3.0/projects/"+pjid+"/events", PL_SOCK_INTERFACE_WLN,data_length)
 	end if
 	
 end sub
@@ -137,6 +162,17 @@ sub str_to_time(byref ts_str as string(20),
 	
 end sub
 
+function get_event(byref rec_num as word) as string	
+	tbl_select("events","events")
+	if tbl_record_read_active(rec_num)=EN_TBL_STATUS_OK	then
+		tbl_field_sg("time",ts,EN_TBL_GET)
+		tbl_field_sg("temp",temp,EN_TBL_GET)
+		tbl_field_sg("light",light,EN_TBL_GET)
+		ts=ts+".000Z"
+		get_event="{\x22keen\x22:{\x22timestamp\x22:\x22"+ts+"\x22},\x22temperature\x22:"+temp+",\x22light\x22:"+light+"},"
+	end if
+end function
+
 function construct_events() as string
 	dim rec_num as word=1
 	sending_record_num=0
@@ -150,7 +186,7 @@ function construct_events() as string
 		tbl_field_sg("temp",temp,EN_TBL_GET)
 		tbl_field_sg("light",light,EN_TBL_GET)
 		ts=ts+".000Z"
-		construct_events=construct_events+"{\x22time\x22:\x22"+ts+"\x22,\x22temperature\x22:"+temp+",\x22light\x22:"+light+"},"
+		construct_events=construct_events+"{\x22keen\x22:{\x22timestamp\x22:\x22"+ts+"\x22},\x22temperature\x22:"+temp+",\x22light\x22:"+light+"},"
 		if sending_record_num>=EVENTS_SENDING_LOT then
 			exit while
 		end if
@@ -307,7 +343,7 @@ sub callback_http_request_complete()
 	dim active_rec_num as word
 	tbl_select("events","events")
 	if sending_record_num>0 then
-		if last_http_response<>"201" then
+		if last_http_response<>"200" then
 			pat.play("R-~",PL_PAT_CANINT)
 			sample_timer=SENSOR_SAMPLING_TIME
 			exit sub
@@ -329,7 +365,23 @@ sub callback_http_request_complete()
 end sub
 
 sub callback_http_send_post_data(remaining_content_length as dword)
-	 http_send_post_data(post_data)
+	if sending_record_num>0 then
+		if current_record_num=0 then
+			http_send_post_data(EVENT_OPENING)
+		else
+			if current_record_num <= sending_record_num then
+				dim tmp as string = get_event(last_active_record_num)
+				if current_record_num = sending_record_num then
+					tmp = left(tmp,len(tmp)-1)
+				end if
+				http_send_post_data(tmp)
+			else
+				http_send_post_data(EVENT_CLOSING)
+			end if
+		end if
+		last_active_record_num = last_active_record_num + 1
+		current_record_num = current_record_num + 1
+	end if	 
 end sub
 
 sub callback_http_request_failed(error_message as string)
