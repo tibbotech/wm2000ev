@@ -87,6 +87,9 @@ sub send_http_sensor_data()
 		last_active_record_num = 0
 		tbl_select("events","events")
 		tbl_get_num_records(active_rec_num,NO)
+		if active_rec_num>MAX_PIECES_PER_REQUEST then
+			active_rec_num=MAX_PIECES_PER_REQUEST
+		end if
 		for i=1 to active_rec_num
 			if tbl_record_read_active(record_num)=EN_TBL_STATUS_OK then
 				row = get_event(record_num)
