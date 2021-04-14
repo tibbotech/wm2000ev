@@ -1,0 +1,8 @@
+I=GEN;D=General;T=GROUP;
+I=SSID;T=STRING;C=EDIT;D=SSID;xIndex=1;
+I=KEY;T=STRING;C=EDIT;D=Password;xIndex=2;
+I=DH;T=BYTE;C=STATIC;D=DHCP;O=Disable/0/Enable/1;xIndex=3;
+I=IP;T=STRING;C=IPCTRL;D=IP;xIndex=4;
+I=GI;T=STRING;C=IPCTRL;D=Gateway;xIndex=5;
+I=NM;T=STRING;C=IPCTRL;D=Netmask;xIndex=6;
+@@STG_RefPath=settings.xtxt

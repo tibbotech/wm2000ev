@@ -1,0 +1,72 @@
+include "global.tbh"
+
+dim interface_ready(MAX_NUM_INTERFACES) as no_yes
+
+sub on_sys_init()
+    boot()
+end sub
+
+sub on_bt_event(bt_event as pl_bt_events)
+
+    luis_on_bt_event(bt_event)
+
+end sub
+
+sub on_bt_data_sent()
+
+    luis_on_bt_data_sent()
+
+end sub
+
+sub on_bt_data_arrival()
+
+    luis_on_bt_data_arrival()
+
+end sub
+
+sub on_wln_event(wln_event as enum pl_wln_events)
+	if wln_event=PL_WLN_EVENT_ASSOCIATED then
+		interface_ready(PL_SOCK_INTERFACE_WLN)=YES
+	else
+		interface_ready(PL_SOCK_INTERFACE_WLN)=NO
+	end if
+end sub
+
+sub on_sys_dhcp_ok(renew as enum no_yes, interface as enum pl_sock_interfaces, ip as string(16), gateway_ip as string(16), netmask as string(16), lease_time as dword)
+	' TODO: place "on_sys_dhcp_ok" event handler code here...
+
+	if renew=YES and wln.ip<>ip then
+		'this is a lease renewal and the DHCP server has issues new IP
+		'it is better to reboot than deal with the implications of the changed IP
+		sys.reboot
+	end if
+
+	#if DEV_DEBUG_PRINT
+		dev_debugprint("WLN DHCP OK ("+ip+")")
+	#endif
+
+	if wln.ip<>ip then
+		stg_set("IP",0,ip)
+		sock.inconenabledmaster=NO
+		close_interface_sockets(PL_SOCK_INTERFACE_WLN)
+		wln.ip=ip
+		if gateway_ip<>"" then 
+			wln.gatewayip=gateway_ip
+			stg_set("GI",0,gateway_ip)
+		end if
+		if netmask<>"" then 
+			wln.netmask=netmask
+			stg_set("NM",0,netmask)
+		end if
+		sock.inconenabledmaster=YES	
+	end if
+
+	sys.debugprint("\x0AIP: "+wln.ip)
+end sub
+
+sub on_button_pressed()
+	
+	dim r,g,b as byte
+	
+	set_rgb_led(r,g,b)
+end sub

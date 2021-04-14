@@ -1,0 +1,11 @@
+<?
+
+include "global.tbh"
+sock.setdata("{\x22redValue\x22: "+redValue+",")
+sock.setdata("\x22greenValue\x22: "+greenValue+",")
+sock.setdata("\x22blueValue\x22: "+blueValue+"}")
+
+	
+sock.send()
+?>
+

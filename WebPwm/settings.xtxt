@@ -1,0 +1,13 @@
+>>SSID	E	S	1	0	32	A	^	SSID
+>>KEY	E	S	1	0	63	A	^	KEY
+>>DH	E	B	1	0	1	A	0	DHCP
+>>IP	E	D	1	4	4	A	1.0.0.1	IP
+>>GI	E	D	1	4	4	A	1.0.0.1	Gateway
+>>NM	E	D	1	4	4	A	255.255.255.0	Subnet
+#define STG_DESCRIPTOR_FILE "settings.xtxt"
+#define STG_DEBUG_PRINT 1
+#define STG_TIMESTAMP 1
+#define STG_MAX_NUM_SETTINGS 6
+#define STG_RAM_ARRAY_SIZE 0
+#define STG_MAX_SETTING_NAME_LEN 4
+#define STG_MAX_SETTING_VALUE_LEN 63

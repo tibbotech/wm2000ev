@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PWM Tester</title>
+  <link rel="stylesheet" type="text/css" href="./bootstrap.min.css">
+   <link rel="stylesheet" type="text/css" href="./bootstrap-slider.min.css">
+    <link rel="stylesheet" type="text/css" href="./style.css">
+    <script type="text/javascript" src="./jquery.js"></script>   
+  <script type="text/javascript" src="./bootstrap.min.js"></script>
+  <script type="text/javascript" src="./bootstrap-slider.min.js"></script>
+</head>
+
+<body>
+<div class="container">
+  <div class="row">
+    <div class="col-lg-3 col-sm-6 red-panel">
+        <h2><strong>Red</strong></h2>
+        <div class="sliderLabel redLabel">
+          0
+        </div>        
+        <input id="redSlider" type="text" class="sliderBody" /><br/>
+         <div class="sliderLabel redLabel">
+          100
+        </div>
+        <span class="glyphicon glyphicon-triangle-bottom sliderDown" id='volumeDown'></span>
+        <span class="label label-default sliderValue" id="redValue"></span> 
+        <span class="glyphicon glyphicon-triangle-top sliderUp" id='volumeUp'></span>
+    </div>
+
+    <div class="col-lg-3 col-sm-6 green-panel">
+        <h2><strong>Green</strong></h2>
+        <div class="sliderLabel greenLabel">
+          0
+        </div>        
+        <input id="greenSlider" type="text" class="sliderBody" /><br/>
+         <div class="sliderLabel greenLabel">
+          100
+        </div>
+        <span class="glyphicon glyphicon-triangle-bottom sliderDown" id='volumeDown'></span>
+        <span class="label label-default sliderValue" id="greenValue"></span> 
+        <span class="glyphicon glyphicon-triangle-top sliderUp" id='volumeUp'></span>
+    </div>
+
+    <div class="col-lg-3 col-sm-6 blue-panel">
+        <h2><strong>Blue</strong></h2>
+        <div class="sliderLabel blueLabel">
+          0
+        </div>        
+        <input id="blueSlider" type="text" class="sliderBody" /><br/>
+         <div class="sliderLabel blueLabel">
+          100
+        </div>
+        <span class="glyphicon glyphicon-triangle-bottom sliderDown" id='volumeDown'></span>
+        <span class="label label-default sliderValue" id="blueValue"></span> 
+        <span class="glyphicon glyphicon-triangle-top sliderUp" id='volumeUp'></span>
+    </div>
+
+
+  </div>
+
+</div>
+<script type="text/javascript" src="./script.js"></script>
+
+<script type="text/javascript">
+
+readData();
+
+$(document).ready(function() {
+	setInterval(function() {
+		readData();
+	}, 3000);
+});
+  
+  
+</script>
+  
+ 
+
+</body>
+</html>

@@ -1,0 +1,91 @@
+include "global.tbh"
+
+
+
+sub boot()
+    dim f as byte
+    for f=0 to MAX_NUM_INTERFACES-1
+        interface_ready(f)=NO
+    next f
+
+    if wln.enabled=NO then
+        wln_init()
+        wln.boot(0)
+    end if
+    
+    'Bluetooth setup
+    '================================================================
+    bt.name=BT_NAME
+    bt.emulation=PL_WLN_BT_EMULATION_MODE_MICROCHIP
+    bt.txbuffrq(1)
+    bt.rxbuffrq(1)
+    sys.buffalloc()
+    'enable the BLE interface and wait for it to become enabled
+    '(blocking version)
+    bt.enable
+    while bt.enabled=NO
+    wend
+    bt.advertise=YES 'allow the device to be discoverable
+    '-----------------------------------------------------------------
+
+    'Setting Library Initialization
+    '================================================================
+    dim stg_init_code as en_stg_status_codes
+    dim stg_name as string(STG_MAX_SETTING_NAME_LEN)
+    if stg_start()<>EN_STG_STATUS_OK then 
+        pat.play("R-R-~",PL_PAT_CANINT)
+        sys.halt
+    end if
+    stg_init_code=stg_check_all(stg_name)
+    select case stg_init_code
+    case EN_STG_STATUS_OK:
+    '--- all good ---
+    case EN_STG_STATUS_INVALID, EN_STG_STATUS_FAILURE:
+        if stg_restore_multiple(EN_STG_INIT_MODE_NORMAL)<>EN_STG_STATUS_OK then 
+            pat.play("R-R-~",PL_PAT_CANINT)
+            sys.halt
+        end if
+    case else:
+        'some other trouble
+        pat.play("R-R-~",PL_PAT_CANINT)
+        sys.halt
+    end select
+    '-----------------------------------------------------------------
+
+    'WM2000 Wi-Fi setup
+    '================================================================
+	dim ssid as string=stg_get("SSID",0)
+	dim pwd as string=stg_get("KEY",0)
+	dim dhcp as no_yes=val(stg_get("DH",0))
+	
+	if ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd or wln.autoconnect<>YES or wln.autodhcp<>dhcp then
+		wln.autoconnectssid=ssid
+		wln.autoconnectpassword=pwd	
+		wln.autodhcp=dhcp
+		wln.autoconnect=YES
+		sys.reboot		
+	end if
+	
+	wln.ip=stg_get("IP",0)
+	wln.netmask=stg_get("NM",0)
+	wln.gatewayip=stg_get("GI",0)
+	if wln.associationstate=PL_WLN_ASSOCIATED then
+		interface_ready(PL_SOCK_INTERFACE_WLN)=YES
+	end if
+
+    luis_start(LUIS_BT_DEVICE_NAME)
+
+    for f=0 to 11
+        sock.num=f
+        sock.txbuffrq(8)  'buffer for HTTP requests and replies
+        sock.varbuffrq(8) 'buffer to get HTTP variables
+        sock.redir(PL_REDIR_SOCK0 + sock.num)
+        sock.protocol=PL_SOCK_PROTOCOL_TCP
+        sock.httpportlist="80"
+        sock.inconmode=PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+    next f
+    sys.buffalloc
+	init_rgb_led_io()
+    pat.play("B-B-B-",PL_PAT_CANINT)
+
+end sub

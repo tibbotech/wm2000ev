@@ -1,0 +1,205 @@
+
+body{
+  color: white;
+}
+
+.slider-track-high {
+  background: white;
+}
+
+.red-panel{
+  text-align: center;
+  height: 600px;
+  background: rgb(200, 0, 0);
+}
+
+.green-panel{
+  text-align: center;
+  height: 600px;
+  background: rgb(0, 200, 0);
+}
+
+.blue-panel{
+  text-align: center;
+  height: 600px;
+  background: rgb(0, 0, 200);
+}
+
+.zone-panel{
+  margin: 50px 0px;
+  padding: 20px;
+}
+
+.channel-panel{
+  padding: 1px 0px;
+}
+
+.channel-label{
+  font-size: 25px;
+  margin-right: 20px;
+}
+.sliderLabel{
+  font-size: 25px;
+  margin:10px;
+}
+
+.redLabel{
+  color: #f5c7db;
+}
+
+.greenLabel{
+  color: #a3edd8;
+}
+
+.blueLabel{
+  color: #bca0ef;
+}
+
+.timer-label{
+  float: left;
+  font-size: 25px;
+  margin-top: 10px;
+}
+.slider.slider-vertical {
+    height: 350px;
+    width: 30px;
+}
+
+.slider.slider-vertical .slider-track {
+    width: 4px;
+    height: 100%;
+    left: 45%;
+    top: 0;
+}
+
+#slider12r .slider-selection {
+  background-image: linear-gradient(to bottom,#f5c7db 0,#9D5087 100%);
+}
+
+#slider12g .slider-selection {
+  background-image: linear-gradient(to bottom,#a3edd8 0,#50959D 100%);
+}
+
+#slider12b .slider-selection {
+  background-image: linear-gradient(to bottom,#bca0ef 0,#6B509D 100%);
+}
+
+.slider-handle {
+  width: 30px;
+  height: 30px;
+  background-image: linear-gradient(to bottom,#ffffff 0,#ffffff 100%);
+}
+
+.glyphicon-time{
+  font-size: 100px;
+  margin-top: 20px;
+}
+
+.sliderUp, .sliderDown{
+  font-size: 25px;
+  margin: 10px 35px;
+}
+
+#greenValue, #redValue, #blueValue {
+  width: 60px;
+}
+
+
+.dropdown{
+  margin: 20px 0px;
+}
+.dropdownOption, .label-default{
+  background-color: white;
+  color: rgb(128, 128, 128);
+  text-align: center;
+  font-size: 25px;
+  font-weight: 600;
+  display: inline-block;  
+}
+
+.dropdown-menu>li>a {
+  text-align: left; 
+  color: rgb(128, 128, 128);
+}
+
+.dropdown-toggle{
+  width: 100px;
+}
+
+.dropdownButton{
+  font-size: 25px;
+  margin: 10px 10px;
+}
+
+.sliderDown:hover, .sliderUp:hover, .dropdownButton:hover{
+  color: #ccc;
+}
+/*------switch--------*/
+.switch {
+  top: 12px;
+  margin-top: 15px;
+  position: relative;
+  display: inline-block;
+  width: 100px;
+  height: 34px;
+}
+
+.switch input {display:none;}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.toggleSlider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  right: 4px;
+  bottom: 4px;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .toggleSlider {
+  background-color: white;
+}
+
+input:focus + .toggleSlider {
+  box-shadow: 0 0 1px white;
+}
+
+input:checked + .toggleSlider:before {
+  -webkit-transform: translateX(-66px);
+  -ms-transform: translateX(-66px);
+  transform: translateX(-66px);
+}
+
+/* Rounded sliders */
+.toggleSlider.round {
+  border-radius: 34px;
+}
+
+.toggleSlider.round:before {
+  border-radius: 50%;
+}
+
+.eqswitch-panel{
+  margin-top: 50px;
+}
+.autoswitch-panel{
+  margin-top: -20px;
+}
+.switch-label{
+  font-size: 25px;
+  margin: 0px 15px;
+}

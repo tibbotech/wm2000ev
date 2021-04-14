@@ -1,0 +1,28 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD W3 HTML//EN">
+    <? 'Code block
+        dim s as string=sock.httprqstring
+        'Since we are only sending a single parameter...
+        '...we do not even bother with sending its name
+        dim pos as byte=instr(1,s," ",1)
+        select case left(s,pos-1) 
+        case "green":
+            pat.play("G-G-G-",PL_PAT_CANINT)
+        case "red":
+            pat.play("R-R-R-",PL_PAT_CANINT)
+        case "both":
+            pat.play("B-B-B-",PL_PAT_CANINT)
+        end select
+    ?>
+<html>
+    <head>
+      <title>LED blinker</title>
+    </head>
+    <body>
+        Click the links below and observe green and red status LEDs:<br><br>
+        <a href="/index.html?green">Blink green LED</a><br>
+        <a href="/index.html?red"?red>Blink red LED</a><br>
+        <a href="/index.html?both">Blink both LEDs</a>
+		
+		<p><a href="/color_picker.html"><b>Go to PWM testing page</b></a></p>
+    </body>
+</html>
