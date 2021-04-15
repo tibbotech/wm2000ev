@@ -125,6 +125,9 @@ end sub
 
 sub set_rgb_led(r as byte ,g as byte ,b as byte)
 	
+	r=100-r
+	g=100-g
+	b=100-b
 	pwm.num =  PL_PWM_NUM_3
 	pwm.dutycycle = r
     pwm.enabled = YES

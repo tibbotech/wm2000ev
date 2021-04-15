@@ -75,10 +75,10 @@ sub boot()
 
     luis_start(LUIS_BT_DEVICE_NAME)
 
-    for f=0 to 11
+    for f=0 to sock.numofsock-1
         sock.num=f
-        sock.txbuffrq(8)  'buffer for HTTP requests and replies
-        sock.varbuffrq(8) 'buffer to get HTTP variables
+        sock.txbuffrq(6)  'buffer for HTTP requests and replies
+        sock.varbuffrq(6) 'buffer to get HTTP variables
         sock.redir(PL_REDIR_SOCK0 + sock.num)
         sock.protocol=PL_SOCK_PROTOCOL_TCP
         sock.httpportlist="80"

@@ -63,10 +63,3 @@ sub on_sys_dhcp_ok(renew as enum no_yes, interface as enum pl_sock_interfaces, i
 
 	sys.debugprint("\x0AIP: "+wln.ip)
 end sub
-
-sub on_button_pressed()
-	
-	dim r,g,b as byte
-	
-	set_rgb_led(r,g,b)
-end sub
