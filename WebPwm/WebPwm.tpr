@@ -4,7 +4,7 @@ platform=WM2000
 src_lib_ver=2_01_04
 name=WebPwm
 output=WebPwm.tpc
-debug=on
+debug=off
 defines= 
 transport=serial
 [address1]

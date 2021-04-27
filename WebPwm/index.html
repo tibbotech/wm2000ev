@@ -232,16 +232,13 @@ $('.sliderBody').on('change', function(slideEvt){
 	if (this.id=="greenSlider") {$('#greenValue').html(this.value);}
 	if (this.id=="blueSlider") {$('#blueValue').html(this.value);}
 
-	if(this.id != curSlider.id||this.value != curSlider.value){
-		curSlider.id=this.id;
-		curSlider.value=this.value;
-		$.ajax({ data: {
-			'id': this.id,
-			'value': this.value
-			}
-		});	
-	}
-
+	curSlider.id=this.id;
+	curSlider.value=this.value;
+	$.ajax({ data: {
+		'id': this.id,
+		'value': this.value
+		}
+	});	
 });
 
 

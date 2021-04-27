@@ -1,7 +1,5 @@
 include "global.tbh"
 
-
-
 sub boot()
     dim f as byte
     for f=0 to MAX_NUM_INTERFACES-1
@@ -12,7 +10,8 @@ sub boot()
         wln_init()
         wln.boot(0)
     end if
-    
+#if COMPANION_ENABLED=0
+
     'Bluetooth setup
     '================================================================
     bt.name=BT_NAME
@@ -27,7 +26,7 @@ sub boot()
     wend
     bt.advertise=YES 'allow the device to be discoverable
     '-----------------------------------------------------------------
-
+#endif
     'Setting Library Initialization
     '================================================================
     dim stg_init_code as en_stg_status_codes
@@ -54,6 +53,8 @@ sub boot()
 
     'WM2000 Wi-Fi setup
     '================================================================
+#if COMPANION_ENABLED=0
+	
 	dim ssid as string=stg_get("SSID",0)
 	dim pwd as string=stg_get("KEY",0)
 	dim dhcp as no_yes=val(stg_get("DH",0))
@@ -69,11 +70,13 @@ sub boot()
 	wln.ip=stg_get("IP",0)
 	wln.netmask=stg_get("NM",0)
 	wln.gatewayip=stg_get("GI",0)
+    luis_start(LUIS_BT_DEVICE_NAME)
+
+#endif
+
 	if wln.associationstate=PL_WLN_ASSOCIATED then
 		interface_ready(PL_SOCK_INTERFACE_WLN)=YES
 	end if
-
-    luis_start(LUIS_BT_DEVICE_NAME)
 
     for f=0 to sock.numofsock-1
         sock.num=f

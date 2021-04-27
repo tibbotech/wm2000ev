@@ -14,7 +14,7 @@ address=
 [address2]
 platform=WM2000
 transport=serial
-address=COM6:921600
+address=COM12:921600
 [address3]
 platform=WM2000
 transport=udp_broadcast

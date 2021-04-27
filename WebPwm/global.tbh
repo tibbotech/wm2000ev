@@ -1,4 +1,5 @@
 'DEFINES-------------------------------------------------------------
+#define COMPANION_ENABLED 1
 #define LUIS_CONFIG_FILE "luis.xtxt"
 #define LUIS_DEBUG_PRINT 1
 #define WLN_AVAILABLE 1
