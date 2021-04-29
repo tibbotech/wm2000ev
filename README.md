@@ -16,6 +16,10 @@ The WM2000EV is a board for evaluating the WM2000. It provides the minimum hardw
 <br>
 
 ## Included Projects ##
+The projects included in this repository constitute the software side of Tibbo's [curated journey of exploration for the WM2000EV](https://docs.tibbo.com/phm/wm2000ev_start).
+
+<br>
+
 ### Keen ###
 This application is pre-loaded at the factory on the WM2000 that is included in each WM2000EV kit. The project requires absolutely no coding by the user and demonstrates how quick and straightforward the configuration of the WM2000 as an IIoT sensor node can be. In as little as 5 minutes, your WM2000 will be securely transmitting sensor data to a nonaffiliated, third-party cloud services provider — [Keen](https://keen.io), in this case.
 
@@ -28,4 +32,19 @@ This project demonstrates the following functionality of the WM2000:
 * Time synchronization
 * Playing patterns of light through the integrated RGB LED
 
-Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_start).
+Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_01)
+
+<br>
+
+### WebPWM ###
+This application showcases how the WM2000's pulse-width modulation (PWM) capabilities can be used to control the color output of the WM2000EV's RGB LED through a web-based interface.
+
+This project demonstrates the following functionality of the WM2000:
+* Using L.U.I.S. to configure the device over BLE
+* Automatic association with a Wi-Fi network
+* Dual applications
+* Wireless debugging
+* Controlling the RGB LED's output by manipulating its three control lines with PWM
+* Using a built-in web interface to provide real-time control over the module
+
+Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_02)
