@@ -11,6 +11,7 @@
 #define DNS_DEBUG_PRINT 1
 #define HTTP_DEBUG_PRINT 1
 
+
 const FIRMWARE_VERSION="{WM2000EV 1.0.0}"
 const MAX_NUM_INTERFACES=4
 const BT_NAME="WM2000EV"
@@ -32,7 +33,6 @@ include "libraries\http.tbh"
 include "libraries\luis.tbh"
 includepp "luis.xtxt"
 includepp "tables.xtxt"
-include "libraries\tables_web.tbh"
 include "tables\trunk\tables.tbh"
 include "libraries\super_i2c.tbh"
 include "libraries\tbt28.tbh"
