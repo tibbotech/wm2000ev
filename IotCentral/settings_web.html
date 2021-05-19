@@ -1,0 +1,81 @@
+<?include "global.tbh"?>
+<?
+dim cmd_str as string
+dim result as string
+dim x,y as byte
+const LUIS_MAX_CMD_LEN = STG_MAX_SETTING_VALUE_LEN + STG_MAX_SETTING_NAME_LEN + 3
+dim http_cmd_str as string(LUIS_MAX_CMD_LEN)
+
+
+cmd_str=sock.httprqstring
+if cmd_str<>"" then
+
+	x=instr(1,cmd_str,chr(LUIS_STX),1)
+	'this will prevent the string to overflow with garbage
+	if len(cmd_str)=LUIS_MAX_CMD_LEN then
+		y=instr(1,cmd_str,chr(LUIS_CR),1)
+		if x=0 or y=0 then
+			cmd_str=""
+			sock.setdata("C")
+			sock.send()
+			exit sub
+		end if
+	end if
+
+	while x<>0
+		'we've got STX
+		cmd_str=right(cmd_str,len(cmd_str)+1-x) 'cut out everything to the left of STX
+		x=instr(1,cmd_str,chr(LUIS_CR),1) 'look for command end
+		if x=0 then exit sub
+		select case left(mid(cmd_str,2,x-2),1)
+		case "E"
+			
+			result=luis_proc_cmd(mid(cmd_str,2,x-2))
+		case "I"
+			
+		case else:
+			result=luis_proc_cmd(mid(cmd_str,2,x-2))
+		end select
+		
+		if result<>"" then
+			sock.setdata(result)
+			sock.send()
+		end if
+		cmd_str=right(cmd_str,len(cmd_str)-x)
+		x=instr(1,cmd_str,chr(LUIS_STX),1)
+	wend
+else
+?>
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Settings Configurator</title>
+</head>
+<body>
+    <script>
+        var sdf = `
+        <?
+	#ifdef LUIS_CONFIG_FILE
+		romfile.open(LUIS_CONFIG_FILE)
+		while romfile.pointer32 < romfile.size
+			if sock.txfree>0 then				
+				sock.setdata(romfile.getdata(sock.txfree-sock.newtxlen))
+				sock.send()
+			end if
+		wend
+	#else
+		#error "SDF_FILE (file name of sdf file to use for settings) not found global.tbh"
+	#endif
+
+		?>
+        `;
+	</script>
+	<div id="app"></div>
+    <script type="text/javascript" src="bundle.js"></script>
+</body>
+</html>
+
+<? end if ?>

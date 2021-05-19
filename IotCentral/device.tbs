@@ -1,0 +1,332 @@
+include "global.tbh"
+
+const SENSOR_SAMPLING_TIME=20 'Every 10 seconds
+
+dim sample_timer as word=SENSOR_SAMPLING_TIME
+dim event_post_timer as dword
+dim led_pattern_index as byte=1
+dim led_pattern as string
+
+declare sub time_to_str(byref ts_str as string(20),	
+	byref time_daycount as word,
+	byref time_mincount as word,
+	byref time_second_byte as byte)
+
+declare sub emulate_iot_device_telemetry()
+declare sub set_rgb_led(r as byte ,g as byte ,b as byte)
+declare sub device_led_play_pat()
+
+sub callback_dns_failure(status as en_dns_status_codes)
+
+	dns_stop()
+end sub
+        
+sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
+
+	if iothub_state=EN_IOTHUB_DPS_CONNECTING then
+		if return_type=EN_DNS_RET_IP then
+			iothub_dps_connect(return_string)
+		end if
+	else
+		mqtt_dns_answer_acquired(return_type,return_string)
+	end if		
+end sub 
+
+sub callback_dns_ok()
+	dim dnsSock as byte
+	
+	dnsSock=sock_get("DNS")
+	dns_stop()
+	sock_release(dnsSock)  
+end sub
+
+sub callback_dns_pre_buffrq(num_of_pages_required as byte)
+    
+end sub
+        
+sub callback_dns_buff_released()
+    
+end sub
+                  
+sub callback_stg_error(byref stg_name_or_num as string,index as byte,status as en_stg_status_codes)
+    
+end sub
+        
+sub callback_stg_pre_get(byref stg_name_or_num as string,index as byte,byref stg_value as string)
+    
+end sub
+        
+sub callback_stg_post_set(byref stg_name_or_num as string, index as byte,byref stg_value as string)
+    
+end sub
+        
+function callback_stg_vm_read(address as word) as byte
+    
+end function
+        
+sub callback_stg_vm_write(data_to_write as byte, address as word)
+    
+end sub
+
+sub callback_on_telemetry_sent()
+	dim active_rec_num as word	
+	tbl_select("events","events")
+	tbl_get_num_records(active_rec_num,NO)
+	if active_rec_num>0 then
+		event_post_timer=1
+		tbl_record_delete(1)
+	end if			
+
+end sub
+
+sub callback_iothub_command_triggered(byref command as string, byref params as string)
+	
+	if command="LedTest" then
+		led_pattern_index=1
+		led_pattern=params
+	end if
+	iothub_command_respond(command,"{}",EN_IOTHUB_OK)
+end sub
+
+public sub device_proc_timer()
+	dim daycounts, mincounts as word
+	dim seconds as byte
+	dim tbl_result as en_tbl_status_codes	
+	dim ts, light, temp as string(36)
+	
+	device_led_play_pat()
+	
+	if sample_timer>0 then
+		sample_timer=sample_timer-1
+	else
+		sample_timer=SENSOR_SAMPLING_TIME
+		temp=ftostr(tbt29_get_c(TBT00_3_S1_CHANNEL_NUM),FTOSTR_MODE_AUTO,4)
+		light=str(tbt28_get(TBT00_3_S1_CHANNEL_NUM))
+		rtc.getdata(daycounts,mincounts,seconds)
+		time_to_str(ts,daycounts,mincounts,seconds)
+		ts=ts+".000Z"
+		sys.debugprint(ts+"\x0a"+temp+" C\x0a"+light+"\x0a")	
+		tbl_result=tbl_select("events","events")
+		tbl_result=tbl_field_sg("time",ts,EN_TBL_SET)
+		tbl_result=tbl_field_sg("temp",temp,EN_TBL_SET)
+		tbl_result=tbl_field_sg("light",light,EN_TBL_SET)
+		tbl_result=tbl_record_add("")			
+	end if 
+
+	if event_post_timer>0 then
+		event_post_timer=event_post_timer-1
+	else
+		event_post_timer=val(stg_get("EPT",0))
+		event_post_timer=event_post_timer*120
+		dim active_rec_num as word			
+		tbl_select("events","events")
+		tbl_get_num_records(active_rec_num,NO)
+		if active_rec_num>0 then
+			emulate_iot_device_telemetry()
+		end if			
+	end if
+	
+end sub
+
+sub emulate_iot_device_telemetry()
+
+	if iothub_state<>EN_IOTHUB_CONNECTED then
+		exit sub
+	end if
+
+	dim ts, light, temp as string(36)
+	
+	tbl_select("events","events")
+	if tbl_record_read_active(1)=EN_TBL_STATUS_OK	then
+		tbl_field_sg("time",ts,EN_TBL_GET)
+		tbl_field_sg("temp",temp,EN_TBL_GET)
+		tbl_field_sg("light",light,EN_TBL_GET)
+		iothub_update_telemetry("temperature",temp)
+		iothub_update_telemetry("light",light)	
+		iothub_send_telemetry(ts)		
+	end if	
+
+end sub
+
+sub callback_mqtt_connect_ok()
+	iothub_on_connected()
+	event_post_timer=1
+end sub
+
+sub callback_mqtt_connect_lost()
+
+	iothub_on_disconnected()
+end sub
+
+sub callback_mqtt_sub_ok()
+	
+	iothub_mqtt_sub_ok()
+	
+end sub
+
+sub callback_mqtt_notif(byref topic as string,byref data as string,remaining_bytes as dword)
+
+	iothub_proc_mqtt_msg(topic,data)
+end sub
+
+sub callback_tbl_error(status as en_tbl_status_codes)
+	
+end sub
+
+function callback_tbl_fail_to_open(byref filename as string, status as pl_fd_status_codes, filenum as byte) as no_yes
+	
+end function
+
+sub callback_tbl_field_error(byref file_name as string,byref field_name as string,tbl_result as en_tbl_status_codes)
+	
+end sub
+
+sub callback_tbl_modified(byref file_name as string, modified_operation as en_tbl_modified_operation)
+	
+end sub
+
+sub callback_luis_bt_connected()
+	
+end sub
+
+sub callback_luis_bt_disconnected()
+	
+end sub
+
+sub callback_luis_bt_enabled()
+	
+end sub
+
+sub callback_luis_bt_disabled()
+	
+end sub
+
+sub callback_luis_buzz_command()
+	
+end sub
+
+sub time_to_str(byref ts_str as string(20),	
+	byref time_daycount as word,
+	byref time_mincount as word,
+	byref time_second_byte as byte)
+	dim time_year_str, time_month_str, time_date_str, time_hour_str, time_minute_str, time_second_str as string(4)
+
+	time_year_str=str(year(time_daycount)+2000)
+	time_month_str=str(month(time_daycount))
+	time_date_str=str(date(time_daycount))
+	time_hour_str=str(hours(time_mincount))
+	time_minute_str=str(minutes(time_mincount))
+	time_second_str=str(time_second_byte)
+
+	if len(time_hour_str) < 2 then 
+		time_hour_str="0"+time_hour_str 
+	end if
+	if len(time_minute_str) < 2 then 
+		time_minute_str="0"+time_minute_str 
+	end if
+	if len(time_second_str) < 2 then 
+		time_second_str="0"+time_second_str 
+	end if
+	if len(time_date_str) < 2 then 
+		time_date_str="0"+time_date_str 
+	end if
+	if len(time_month_str) < 2 then 
+		time_month_str="0"+time_month_str 
+	end if
+	ts_str=time_year_str+"-"+time_month_str+"-"+time_date_str+"T"+time_hour_str+":"+time_minute_str+":"+time_second_str
+	
+end sub
+
+sub device_led_play_pat()
+	dim p as string(1)
+	
+	if led_pattern_index>len(led_pattern) then
+		exit sub
+	end if
+check_again:	
+	p=mid(led_pattern,led_pattern_index,1)
+	select case p
+	case "R","r":
+		set_rgb_led(0,100,100)
+	case "G","g":
+		set_rgb_led(100,0,100)
+	case "B","b":
+		set_rgb_led(100,100,0)
+	case "~":
+		if led_pattern_index=1 then
+			exit sub
+		else
+			led_pattern_index=1
+			goto check_again		
+		end if
+	case else:
+		set_rgb_led(100,100,100)
+	end select
+	
+	led_pattern_index=led_pattern_index+1
+end sub
+
+sub set_rgb_led(r as byte ,g as byte ,b as byte)
+	
+	pwm.num =  PL_PWM_NUM_3
+	pwm.dutycycle = r
+    pwm.enabled = YES
+    
+	pwm.num =  PL_PWM_NUM_5
+    pwm.dutycycle = g
+	pwm.enabled = YES
+    
+	pwm.num =  PL_PWM_NUM_6
+    pwm.dutycycle = b
+	pwm.enabled = YES
+    
+end sub 
+
+sub callback_iothub_set_datetime(byref dt_string as string)
+	
+	'Mon, 08 Feb 2021 03:16:19 GMT
+	dim daycounts, mincounts as word
+	dim curr_daycounts, curr_mincounts as word
+	dim syear,smonth,sdate,shour,smin,ssec as string(4)
+	dim b as byte
+	
+	syear=mid(dt_string,15,2)
+	smonth=mid(dt_string,9,3)
+	sdate=mid(dt_string,6,2)
+	shour=mid(dt_string,18,2)
+	smin=mid(dt_string,21,2)
+	ssec=mid(dt_string,24,2)
+	
+	select case smonth
+	case "Jan": smonth="01"
+	case "Feb": smonth="02"
+	case "Mar": smonth="03"
+	case "Apr": smonth="04"
+	case "May": smonth="05"
+	case "Jun": smonth="06"
+	case "Jul": smonth="07"
+	case "Aug": smonth="08"
+	case "Sep": smonth="09"
+	case "Oct": smonth="10"
+	case "Nov": smonth="11"
+	case "Dec": smonth="12"
+	case else:
+	end select
+	daycounts=daycount(val(syear),val(smonth),val(sdate))
+	mincounts=mincount(val(shour),val(smin))
+	
+	rtc.getdata(curr_daycounts,curr_mincounts, b)
+	if curr_daycounts<>daycounts or curr_mincounts<>mincounts then
+		b=val(ssec) 	
+		rtc.setdata(daycounts,mincounts,b)
+	end if
+		
+end sub
+
+sub callback_iothub_device_assigned(byref assigned_hub as string)
+	sys.debugprint(assigned_hub+"\x0d\x0a")
+end sub
+
+sub callback_iothub_dps_failed()
+	
+end sub

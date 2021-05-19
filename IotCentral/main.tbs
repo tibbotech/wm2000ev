@@ -1,0 +1,55 @@
+include "global.tbh"
+
+dim TBT00_3_S1_CHANNEL_NUM as byte
+
+declare sub device_proc_timer()
+
+sub on_sys_init()
+
+    boot()
+end sub
+
+sub on_sock_data_arrival()
+	dns_proc_data()
+	iothub_proc_data()
+end sub
+
+sub on_sys_timer()
+	dns_proc_timer()
+	iothub_proc_timer()
+	device_proc_timer()
+end sub
+
+sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
+	iothub_proc_sock_event()
+end sub
+
+sub on_button_pressed()
+
+end sub
+
+sub on_wln_event(wln_event as enum pl_wln_events)
+	' TODO: place "on_wln_event" event handler code here...
+end sub
+
+sub on_wln_task_complete(completed_task as enum pl_wln_tasks)
+	' TODO: place "on_wln_task_complete" event handler code here...
+end sub
+
+sub on_sys_dhcp_ok(renew as enum no_yes, interface as enum pl_sock_interfaces, ip as string(16), gateway_ip as string(16), netmask as string(16), lease_time as dword)
+	' TODO: place "on_sys_dhcp_ok" event handler code here...
+	
+	wln.ip=ip
+	wln.gatewayip=gateway_ip
+	wln.netmask=netmask
+	sys.debugprint("IP obtained: "+wln.ip+" gateway: "+wln.gatewayip+" netmask: "+wln.netmask+"\x0d")
+	iothub_on_ip_otained()
+end sub
+
+sub on_sys_dhcp_failure(interface as enum pl_sock_interfaces)
+	' TODO: place "on_sys_dhcp_failure" event handler code here...
+end sub
+
+sub on_sock_data_sent()
+	iothub_on_telemetry_sent()
+end sub

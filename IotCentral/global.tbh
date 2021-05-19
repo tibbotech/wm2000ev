@@ -1,0 +1,48 @@
+'DEFINES-------------------------------------------------------------
+#define DNS_DEBUG_PRINT 1
+#define LUIS_CONFIG_FILE "luis.xtxt"
+#define LUIS_DEBUG_PRINT 1
+#define WLN_AVAILABLE 1
+#define SIGNAL_STRENGTH_INDICATION 1
+#define MQTT_SSL 1
+#define MQTT_CER_FILE "azure.cer"
+#define MQTT_LARGE_PACKETS 1
+#define MQTT_DEBUG_PRINT 1
+
+const FIRMWARE_VERSION="{WM2000EV_AZURE 1.0.0}"
+const MAX_NUM_INTERFACES=4
+const BT_NAME="WM2000EV_AZURE"
+const DEVICE_NET_IP = "192.168.1.101"
+const DEVICE_NET_MASK = "255.255.255.0"
+const DEVICE_NET_GATEWAY = "192.168.1.1"
+const S1_TBT00_3_S1_CLK =  PL_IO_NUM_1_TX0
+const S1_TBT00_3_S1_DATA =  PL_IO_NUM_0_RX0
+
+'INCLUDES------------------------------------------------------------
+include "sock\trunk\sock.tbh"
+include "dns\trunk\dns.tbh"
+includepp "settings.xtxt"
+include "settings\trunk\settings.tbh"
+includepp "tables.xtxt"
+include "tables\trunk\tables.tbh"
+include "luis\trunk\luis.tbh"
+includepp "luis.xtxt"
+include "mqtt\trunk\mqtt.tbh"
+include "time\trunk\time.tbh"
+includepp "filenum.xtxt"
+include "filenum\trunk\filenum.tbh"
+includepp "iothub.xtxt"
+include "iothub.tbh"
+include "super_i2c\trunk\super_i2c.tbh"
+include "libraries\tbt28.tbh"
+include "libraries\tbt29.tbh"
+include "ssi\trunk\ssi.tbh"
+
+
+'DECLARATIONS--------------------------------------------------------
+declare sub boot()
+declare function generateSasToken(byref resourceUri as string, byref signingKey as string, expiresInMins as word) as string
+
+declare TBT00_3_S1_CHANNEL_NUM as byte
+declare led_pattern_index as byte
+declare led_pattern as string
