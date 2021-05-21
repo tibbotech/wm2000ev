@@ -53,3 +53,21 @@ end sub
 sub on_sock_data_sent()
 	iothub_on_telemetry_sent()
 end sub
+
+sub on_bt_event(bt_event as pl_bt_events)
+
+    luis_on_bt_event(bt_event)
+
+end sub
+
+sub on_bt_data_sent()
+
+    luis_on_bt_data_sent()
+
+end sub
+
+sub on_bt_data_arrival()
+
+    luis_on_bt_data_arrival()
+
+end sub

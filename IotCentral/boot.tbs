@@ -5,11 +5,9 @@ const DPS_SERVER="global.azure-devices-provisioning.net"
 declare sub init_rgb_led_io()
 
 sub boot()
- 	wln.autoconnectssid="TibboTestW"
-	wln.autoconnectpassword="16836836"
-	wln.autodhcp=YES
-    wln.autoconnect=YES
-
+	
+	init_rgb_led_io()
+	
     if tbt28_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)=NG then
         sys.debugprint("SSI channel could not be allocated, using bit banging instead."+chr(10)+chr(13))
     end if
@@ -39,7 +37,6 @@ sub boot()
     while bt.enabled=NO
     wend
     bt.advertise=YES 'allow the device to be discoverable
-
 
     'Setting Library Initialization
     '================================================================
@@ -71,23 +68,21 @@ sub boot()
     'WM2000 Wi-Fi setup
     '================================================================
 	
-'	dim ssid as string=stg_get("SSID",0)
-'	dim pwd as string=stg_get("KEY",0)
+	dim ssid as string=stg_get("SSID",0)
+	dim pwd as string=stg_get("KEY",0)
 
-'	if ssid="" and wln.autoconnect=YES then
-'		wln.autoconnect=NO
-'		sys.reboot
-'	else
-'		if ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd or wln.autoconnect<>YES then
-'			wln.autoconnect=YES
-'			wln.autoconnectssid=ssid
-'			wln.autoconnectpassword=pwd	
-'			wln.autodhcp=YES
-'			wln.autoconnect=YES
-'			sys.reboot		
-'		end if	
-'	end if
-
+	if ssid="" then
+		wln.autoconnect=NO
+	else
+		if ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd then
+			wln.autoconnect=YES
+			wln.autoconnectssid=ssid
+			wln.autoconnectpassword=pwd	
+			wln.autodhcp=YES
+			wln.autoconnect=YES
+			sys.reboot		
+		end if	
+	end if
 
     luis_start(BT_NAME)
 
@@ -115,7 +110,7 @@ sub boot()
 	
 	iothub_start(device_id, scope_id, DPS_SERVER, device_primary_key, PL_SOCK_INTERFACE_WLN)	
 	
-	init_rgb_led_io()
+	
 	led_pattern="R-G-B-R-G-B-R-G-B-"
 end sub
 

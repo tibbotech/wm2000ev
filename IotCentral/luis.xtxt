@@ -1,8 +1,8 @@
 I=GEN;D=General;T=GROUP;
 I=SSID;T=STRING;D=SSID;C=EDIT;xIndex=1;
 I=KEY;T=STRING;D=WiFi password;C=EDIT;xIndex=2;
-I=PJID;T=STRING;D=Project ID;C=EDIT;xIndex=5;
-I=RKEY;T=STRING;D=Read key;C=EDIT;xIndex=3;
-I=WKEY;T=STRING;D=Write key;C=EDIT;xIndex=4;
-I=EPT;T=WORD;D=Event posting time (minute);C=EDIT;xIndex=7;
+I=SCID;T=STRING;D=Scope ID;C=EDIT;xIndex=3;
+I=DVID;T=STRING;D=Device ID;C=EDIT;xIndex=4;
+I=PKEY;T=STRING;D=Primary key;C=EDIT;xIndex=5;
+I=EPT;T=WORD;D=Event posting time (minute);C=EDIT;xIndex=6;
 @@STG_RefPath=settings.xtxt
