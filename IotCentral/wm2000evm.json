@@ -1,0 +1,50 @@
+[
+  {
+    "@id": "dtmi:stevenstudent:wm2000evm43j;2",
+    "@type": "Interface",
+    "contents": [
+      {
+        "@id": "dtmi:stevenstudent:wm2000evm43j:temperature;1",
+        "@type": "Telemetry",
+        "displayName": {
+          "en": "temperature"
+        },
+        "name": "temperature",
+        "schema": "double"
+      },
+      {
+        "@id": "dtmi:stevenstudent:wm2000evm43j:light;1",
+        "@type": "Telemetry",
+        "displayName": {
+          "en": "light"
+        },
+        "name": "light",
+        "schema": "double"
+      },
+      {
+        "@id": "dtmi:stevenstudent:wm2000evm43j:LedTest;2",
+        "@type": "Command",
+        "commandType": "synchronous",
+        "displayName": {
+          "en": "Led test"
+        },
+        "name": "LedTest",
+        "request": {
+          "@type": "CommandPayload",
+          "displayName": {
+            "en": "Pattern"
+          },
+          "name": "Pattern",
+          "schema": "string"
+        }
+      }
+    ],
+    "displayName": {
+      "en": "wm2000evm"
+    },
+    "@context": [
+      "dtmi:iotcentral:context;2",
+      "dtmi:dtdl:context;2"
+    ]
+  }
+]
