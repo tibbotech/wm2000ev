@@ -78,7 +78,7 @@ sub callback_iothub_command_triggered(byref command as string, byref params as s
 	
 	if command="LedTest" then
 		led_pattern_index=1
-		led_pattern=params
+		led_pattern=mid(params,2,len(params)-2)
 	end if
 	iothub_command_respond(command,"{}",EN_IOTHUB_OK)
 end sub

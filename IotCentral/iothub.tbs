@@ -422,7 +422,8 @@ public sub iothub_send_telemetry(byref timestamp as string)
 			server_bound_message_topic=server_bound_message_topic+TOPIC_TIMESTAMP+timestamp
 		end if
 	end if
-	
+	sock.num=mqtt_sock_num
+	sock.notifysent(0)
 	mqtt_publish(server_bound_message_topic,s,QOS_AT_MOST_ONCE)
 	iothub_sending_telemetry=YES
 end sub
@@ -452,6 +453,7 @@ public sub iothub_proc_timer()
 		iothub_state=EN_IOTHUB_DPS_CONNECTING
 
 	case EN_IOTHUB_CONNECTING,EN_IOTHUB_DISCONNECTED, EN_IOTHUB_CONNECTED:
+	
 		mqtt_proc_timer()
 	end select
 	
@@ -689,44 +691,46 @@ public sub iothub_dps_connect(byref target_ip as string)
 end sub
 
 sub iothub_dps_device_lookup()
-	sock.num=iothub_dps_sock
+	dim content as string = "{registrationId: \x22"+iothub_device_id+"\x22}"
 	
+	sock.num=iothub_dps_sock
 	if sock.state<>PL_SST_EST_TLS then
 		exit sub
 	end if
 	sys.debugprint("DPS device lookup\x0d\x0a")
 	
-	sock.tlssetdata("POST /0ne0029CD42/registrations/1x3yugygdzp?api-version=2019-03-31 HTTP/1.1\x0d\x0a")
-	sock.tlssetdata("Host: global.azure-devices-provisioning.net\x0d\x0a")
-	sock.tlssetdata("Content-Length: "+str(len("{registrationId: \x221x3yugygdzp\x22}"))+"\x0d\x0a")
+	sock.tlssetdata("POST /"+iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31 HTTP/1.1\x0d\x0a")
+	sock.tlssetdata("Host: "+iothub_dps_server+"\x0d\x0a")
+	sock.tlssetdata("Content-Length: "+str(len(content))+"\x0d\x0a")
 
 	sock.tlssetdata("Content-Type: application/json\x0d\x0a")
-	sock.tlssetdata("Authorization: SharedAccessSignature sr=0ne0029CD42%2Fregistrations%2F1x3yugygdzp&sig=")
+	sock.tlssetdata("Authorization: SharedAccessSignature sr="+iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id+"&sig=")
 	sock.tlssetdata(iothub_dps_authorization)
 	sock.tlssetdata("\x0d\x0a\x0d\x0a")
-	sock.tlssetdata("{registrationId: \x221x3yugygdzp\x22}\x0d\x0a")
+	sock.tlssetdata(content+"\x0d\x0a")
 	sock.send()
 
 end sub
 
 sub iothub_dps_device_provisioning()
-	sock.num=iothub_dps_sock
+	dim content as string = "{registrationId: \x22"+iothub_device_id+"\x22}"
 	
+	sock.num=iothub_dps_sock
 	if sock.state<>PL_SST_EST_TLS then
 		exit sub
 	end if
 
 	sys.debugprint("DPS device provisioning\x0d\x0a")
-	
-	sock.tlssetdata("PUT /0ne0029CD42/registrations/1x3yugygdzp/register?api-version=2019-03-31 HTTP/1.1\x0d\x0a")
-	sock.tlssetdata("Host: global.azure-devices-provisioning.net\x0d\x0a")
-	sock.tlssetdata("Content-Length: "+str(len("{registrationId: \x221x3yugygdzp\x22}"))+"\x0d\x0a")
+	sock.tlssetdata("PUT /"+iothub_scope_id+"/registrations/"+iothub_device_id+"/register?api-version=2019-03-31 HTTP/1.1\x0d\x0a")
+
+	sock.tlssetdata("Host: "+iothub_dps_server+"\x0d\x0a")
+	sock.tlssetdata("Content-Length: "+str(len(content))+"\x0d\x0a")
 
 	sock.tlssetdata("Content-Type: application/json\x0d\x0a")
-	sock.tlssetdata("Authorization: SharedAccessSignature sr=0ne0029CD42%2Fregistrations%2F1x3yugygdzp&sig=")
+	sock.tlssetdata("Authorization: SharedAccessSignature sr="+iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id+"&sig=")
 	sock.tlssetdata(iothub_dps_authorization)
 	sock.tlssetdata("\x0d\x0a\x0d\x0a")	
-	sock.tlssetdata("{registrationId: \x221x3yugygdzp\x22}\x0d\x0a")
+	sock.tlssetdata(content+"\x0d\x0a")
 	sock.send()
 
 end sub
