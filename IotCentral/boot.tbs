@@ -1,11 +1,8 @@
 include "global.tbh"
 
-const DPS_SERVER="global.azure-devices-provisioning.net"
-
 declare sub init_rgb_led_io()
 
 sub boot()
-	
 	init_rgb_led_io()
 	
     if tbt28_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)=NG then
@@ -104,13 +101,12 @@ sub boot()
 	
     pat.play("B-B-B-",PL_PAT_CANINT)
 	
-	dim device_primary_key as string="1111"
-	dim scope_id as string="0ne002A0695"
-	dim device_id as string="1x3yugygdzp"
+	dim device_primary_key as string=stg_get("PKEY",0)
+	dim scope_id as string=stg_get("SCID",0)
+	dim device_id as string=stg_get("DVID",0)
+	dim dps_server as string=stg_get("DPSS",0)
 	
-	iothub_start(device_id, scope_id, DPS_SERVER, device_primary_key, PL_SOCK_INTERFACE_WLN)	
-	
-	
+	iothub_start(device_id, scope_id, dps_server, device_primary_key, PL_SOCK_INTERFACE_WLN)	
 	led_pattern="R-G-B-R-G-B-R-G-B-"
 end sub
 

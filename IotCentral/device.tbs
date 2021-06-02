@@ -18,7 +18,6 @@ declare sub device_led_play_pat()
 
 sub callback_dns_failure(status as en_dns_status_codes)
 
-	dns_stop()
 end sub
         
 sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
@@ -33,11 +32,7 @@ sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return
 end sub 
 
 sub callback_dns_ok()
-	dim dnsSock as byte
-	
-	dnsSock=sock_get("DNS")
-	dns_stop()
-	sock_release(dnsSock)  
+
 end sub
 
 sub callback_dns_pre_buffrq(num_of_pages_required as byte)

@@ -49,6 +49,9 @@ function luis_start(byref bt_name as string) as en_luis_status_codes
 	#endif
 	
 	if wln.enabled = NO then
+		#if PLATFORM_ID <> WM2000
+			ln_init()
+		#endif
 		wln.boot(0)
 	else
 		#if LUIS_DEBUG_PRINT
@@ -193,13 +196,13 @@ end sub
 
 function luis_proc_cmd(byref cmd_str as string) as string
 	luis_proc_cmd=""
-	dim reply_str as string(LUIS_MAX_BT_RPL_LEN)
+	dim reply_str as string
 	dim x as byte
 	dim setting_name as string(STG_MAX_SETTING_NAME_LEN)
 	dim explicit_index as no_yes
 	dim index as byte
 	dim s2 as string(64)
-	dim stg_data as string(32)
+	dim stg_data as string
 	explicit_index=NO
 	if left(cmd_str,1)<>"D" then
 		x=instr(1,cmd_str,LUIS_CMD_ESC_CHAR,1)
@@ -261,7 +264,7 @@ function luis_proc_cmd(byref cmd_str as string) as string
 		goto reply_ok
 
 	case "I": 'initialize settings --------------------------
-		if stg_restore_multiple(EN_STG_INIT_MODE_NORMAL)<>EN_STG_STATUS_OK then goto reply_failed
+		if stg_restore_multiple(EN_STG_INIT_MODE_OVERRIDE)<>EN_STG_STATUS_OK then goto reply_failed
 		goto reply_ok		
 
 	case "E": 'reboot -------------------------------------------
@@ -305,7 +308,7 @@ function luis_on_bt_data_arrival() as en_luis_status_codes
 	dim x,y as byte
 	dim reply as string
 	const LUIS_MAX_CMD_LEN = STG_MAX_SETTING_VALUE_LEN + STG_MAX_SETTING_NAME_LEN + 3
-	dim bt_cmd_str as string(LUIS_MAX_CMD_LEN)
+	dim bt_cmd_str as string(255)
 	luis_on_bt_data_arrival=EN_LUIS_STATUS_OK
 	
 	if luis_init_flag<>LUIS_INIT_SIGNATURE then

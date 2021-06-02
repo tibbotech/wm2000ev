@@ -30,6 +30,7 @@ dim iothub_device_id as string(32)
 dim iothub_primary_key as string(64)
 dim iothub_sas_token as string
 dim iothub_timer as byte=0
+dim iothub_dps_authorization as string
 
 declare mqtt_sock_num as byte
 declare function iothub_init() as ok_ng
@@ -164,9 +165,11 @@ function iothub_init() as ok_ng
 	
 	dns_start(sock_get("DNS"))
 	
+	sock.num=sock.tlscurrentnum
+	sock.tlsdeinit()
+	
 	iothub_dps_sock=sock_get("DPS")
 	sock.num=iothub_dps_sock
-	sock.tlsdeinit()
 	sock.connectiontout=60
 	sock.protocol=PL_SOCK_PROTOCOL_TCP
 	sock.inconmode= PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
@@ -182,6 +185,8 @@ function iothub_init() as ok_ng
 end function
 
 public sub iothub_start(byref device_id as string, byref scope_id as string, byref dps_url as string, byref symmetricKey as string, interface as pl_sock_interfaces)
+	dim resourceUri as string=scope_id+"%2Fregistrations%2F"+device_id
+
 	if device_id="" or scope_id="" or dps_url="" or symmetricKey="" then
 		#if IOTHUB_DEBUG_PRINT
 			iothub_debugprint("ERROR: iothub_start() invalid parameters")
@@ -190,13 +195,15 @@ public sub iothub_start(byref device_id as string, byref scope_id as string, byr
 	end if
 	iothub_init()
 	iothub_device_id=device_id
+	iothub_scope_id=scope_id
 	iothub_dps_server=dps_url
 	iothub_primary_key =symmetricKey
 	iothub_interface=interface
-	
-	iothub_state=EN_IOTHUB_IDLE
 	server_bound_message_topic="devices/"+iothub_device_id+"/messages/events/"
 	device_bound_message_topic="devices/"+iothub_device_id+"/messages/devicebound/"
+
+	iothub_state=EN_IOTHUB_IDLE
+	iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
 end sub
 
 public sub iothub_on_connected()
@@ -430,13 +437,11 @@ public sub iothub_proc_timer()
 	select case iothub_state
 	case EN_IOTHUB_REGISTERED:
 		sock_release(iothub_dps_sock)
-		iothub_sas_token="SharedAccessSignature sr=iotc-be8bc340-66b4-495b-8866-7b5ab0b8db3d.azure-devices.net%2Fdevices%2F1x3yugygdzp&sig=oa7tqXJ%2BpKTqm5IwT4NNmNy1JiSlA1M4m3O5CYAnd0g%3D&se=1652520809"
-		dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+API_VERSION
-		
-		iothub_assigned_hub="iotc-be8bc340-66b4-495b-8866-7b5ab0b8db3d.azure-devices.net"
-		iothub_device_id="1x3yugygdzp"
-		
-		sys.debugprint(user_name+"\x0a")
+	
+		dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+API_VERSION		
+		dim resourceUri as string= iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id
+		dns_start(sock_get("DNS"))
+		iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+ generateSasToken(resourceUri, iothub_primary_key, 525600)
 		mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
 		iothub_state=EN_IOTHUB_CONNECTING
 		
@@ -493,7 +498,10 @@ public sub iothub_proc_sock_event()
 		case EN_IOTHUB_IDLE, EN_IOTHUB_DPS_CONNECTING, EN_IOTHUB_DEVICE_LOOKUP, EN_IOTHUB_PROVISIONING:
 		select case sock.state
 		case PL_SST_CLOSED, PL_SST_CL_PCLOSED,PL_SST_CL_PRESET_EST:
-			sys.debugprint("dps disconnected")
+			sys.debugprint("dps disconnected\x0a")
+			dim resourceUri as string=iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id
+			iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
+
 			callback_iothub_dps_failed()
 			iothub_timer=5
 			
@@ -566,17 +574,6 @@ public sub iothub_proc_data()
 			do 
 				s=sock.tlsgetdata(255)
 			loop while sock.tlsrxlen>0
-			
-			
-			
-'iothub_assigned_hub=""
-''if device is not registered, we start provisioning process
-'if iothub_assigned_hub="" then
-'	iothub_state=EN_IOTHUB_DEVICE_LOOKUP
-'end if
-
-
-
 		end if			
 	case EN_IOTHUB_PROVISIONING:
 		if sock.num<>iothub_dps_sock then
@@ -663,9 +660,8 @@ public sub iothub_mqtt_sub_ok()
 end sub
 
 public sub iothub_on_ip_otained()
+
 	iothub_state=EN_IOTHUB_IP_OBTAINED	
-	
-	'iothub_state=EN_IOTHUB_REGISTERED
 end sub
 
 public sub iothub_on_telemetry_sent()
@@ -705,7 +701,9 @@ sub iothub_dps_device_lookup()
 	sock.tlssetdata("Content-Length: "+str(len("{registrationId: \x221x3yugygdzp\x22}"))+"\x0d\x0a")
 
 	sock.tlssetdata("Content-Type: application/json\x0d\x0a")
-	sock.tlssetdata("Authorization: SharedAccessSignature sr=0ne0029CD42%2Fregistrations%2F1x3yugygdzp&sig=%2FWvPowNKbF2fHT38yFtb998d2EHdA3sqK%2F5Ri2KIQ%2Bo%3D&se=1651635445\x0d\x0a\x0d\x0a")
+	sock.tlssetdata("Authorization: SharedAccessSignature sr=0ne0029CD42%2Fregistrations%2F1x3yugygdzp&sig=")
+	sock.tlssetdata(iothub_dps_authorization)
+	sock.tlssetdata("\x0d\x0a\x0d\x0a")
 	sock.tlssetdata("{registrationId: \x221x3yugygdzp\x22}\x0d\x0a")
 	sock.send()
 
@@ -725,30 +723,11 @@ sub iothub_dps_device_provisioning()
 	sock.tlssetdata("Content-Length: "+str(len("{registrationId: \x221x3yugygdzp\x22}"))+"\x0d\x0a")
 
 	sock.tlssetdata("Content-Type: application/json\x0d\x0a")
-	sock.tlssetdata("Authorization: SharedAccessSignature sr=0ne0029CD42%2Fregistrations%2F1x3yugygdzp&sig=%2FWvPowNKbF2fHT38yFtb998d2EHdA3sqK%2F5Ri2KIQ%2Bo%3D&se=1651635445\x0d\x0a\x0d\x0a")
+	sock.tlssetdata("Authorization: SharedAccessSignature sr=0ne0029CD42%2Fregistrations%2F1x3yugygdzp&sig=")
+	sock.tlssetdata(iothub_dps_authorization)
+	sock.tlssetdata("\x0d\x0a\x0d\x0a")	
 	sock.tlssetdata("{registrationId: \x221x3yugygdzp\x22}\x0d\x0a")
 	sock.send()
-	
-	
-'PUT /0ne002A0695/registrations/25awcgtwyrq/register?api-version=2019-03-31 HTTP/1.1
-'Host: 192.168.1.64
-'Content-Length: 33
-'Authorization: SharedAccessSignature sr=0ne002A0695%2Fregistrations%2F25awcgtwyrq&sig=kq%2FAbxKqIF%2BPdTU0W3zyUJWNWEjy%2BhHUYO3RSUCy%2Fdo%3D&se=1651635445
-'Content-Type: application/json
-
-'{registrationId: "25awcgtwyrq"}
-
-
-
-
-'POST /0ne002A0695/registrations/25awcgtwyrq?api-version=2019-03-31 HTTP/1.1
-'Host: 192.168.1.64
-'Content-Length: 33
-'Authorization: SharedAccessSignature sr=0ne002A0695%2Fregistrations%2F25awcgtwyrq&sig=kq%2FAbxKqIF%2BPdTU0W3zyUJWNWEjy%2BhHUYO3RSUCy%2Fdo%3D&se=1651635445
-'Content-Type: application/json
-
-'{registrationId: "25awcgtwyrq"}
-
 
 end sub
 

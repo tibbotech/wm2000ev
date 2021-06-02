@@ -1053,6 +1053,10 @@ end function
 '------------------------------------------------------------------------------
 public function tbl_close(byref file_name as string)as en_tbl_status_codes
 
+'<<<<<<<<<<<<<<<<<<<<<<<<<<< UNFINISHED
+
+
+
 tbl_ok:
 	tbl_close=EN_TBL_STATUS_OK
 	goto finish

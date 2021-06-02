@@ -33,7 +33,6 @@ enum en_luis_status_codes
 	EN_LUIS_FILE_CONFIG_ERROR	'Failed to open <LUIS_CONFIG_FILE> configuration file
 end enum
 
-const LUIS_MAX_BT_RPL_LEN=30
 const LUIS_STX=2
 const LUIS_CR=13
 

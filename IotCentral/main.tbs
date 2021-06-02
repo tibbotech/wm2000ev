@@ -10,17 +10,20 @@ sub on_sys_init()
 end sub
 
 sub on_sock_data_arrival()
+
 	dns_proc_data()
 	iothub_proc_data()
 end sub
 
 sub on_sys_timer()
+
 	dns_proc_timer()
 	iothub_proc_timer()
 	device_proc_timer()
 end sub
 
 sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
+
 	iothub_proc_sock_event()
 end sub
 
@@ -57,17 +60,14 @@ end sub
 sub on_bt_event(bt_event as pl_bt_events)
 
     luis_on_bt_event(bt_event)
-
 end sub
 
 sub on_bt_data_sent()
 
     luis_on_bt_data_sent()
-
 end sub
 
 sub on_bt_data_arrival()
 
     luis_on_bt_data_arrival()
-
 end sub
