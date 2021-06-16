@@ -132,7 +132,7 @@ sub emulate_iot_device_telemetry()
 	dim ts, light, temp as string(36)
 	
 	tbl_select("events","events")
-	if tbl_record_read_active(1)=EN_TBL_STATUS_OK	then
+	if tbl_record_read_active(1)=EN_TBL_STATUS_OK then
 		tbl_field_sg("time",ts,EN_TBL_GET)
 		tbl_field_sg("temp",temp,EN_TBL_GET)
 		tbl_field_sg("light",light,EN_TBL_GET)
@@ -156,7 +156,6 @@ end sub
 sub callback_mqtt_sub_ok()
 	
 	iothub_mqtt_sub_ok()
-	
 end sub
 
 sub callback_mqtt_notif(byref topic as string,byref data as string,remaining_bytes as dword)
