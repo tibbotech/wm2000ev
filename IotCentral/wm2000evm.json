@@ -1,10 +1,10 @@
 [
   {
-    "@id": "dtmi:stevenstudent:wm2000evm43j;2",
+    "@id": "dtmi:tibbo:wm2000evm43j;2",
     "@type": "Interface",
     "contents": [
       {
-        "@id": "dtmi:stevenstudent:wm2000evm43j:temperature;1",
+        "@id": "dtmi:tibbo:wm2000evm43j:temperature;1",
         "@type": "Telemetry",
         "displayName": {
           "en": "temperature"
@@ -13,7 +13,7 @@
         "schema": "double"
       },
       {
-        "@id": "dtmi:stevenstudent:wm2000evm43j:light;1",
+        "@id": "dtmi:tibbo:wm2000evm43j:light;1",
         "@type": "Telemetry",
         "displayName": {
           "en": "light"
@@ -22,7 +22,7 @@
         "schema": "double"
       },
       {
-        "@id": "dtmi:stevenstudent:wm2000evm43j:LedTest;2",
+        "@id": "dtmi:tibbo:wm2000evm43j:LedTest;2",
         "@type": "Command",
         "commandType": "synchronous",
         "displayName": {
