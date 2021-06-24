@@ -1,5 +1,6 @@
 >>temperature				T
 >>light						T
+>>LedTest					C		{Pattern},{}
 
 #define IOTHUB_DEBUG_PRINT 1
 #define IOTHUB_ITEM_NAME_LEN 16
