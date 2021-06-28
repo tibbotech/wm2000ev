@@ -17,15 +17,13 @@ declare sub set_rgb_led(r as byte ,g as byte ,b as byte)
 declare sub device_led_play_pat()
 
 sub callback_dns_failure(status as en_dns_status_codes)
-
+	
 end sub
         
 sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
 
 	if iothub_state=EN_IOTHUB_DPS_CONNECTING then
-		if return_type=EN_DNS_RET_IP then
-			iothub_dps_connect(return_string)
-		end if
+		iothub_dns_answer_acquired(return_type,return_string)
 	else
 		mqtt_dns_answer_acquired(return_type,return_string)
 	end if		
@@ -40,7 +38,7 @@ sub callback_dns_pre_buffrq(num_of_pages_required as byte)
 end sub
         
 sub callback_dns_buff_released()
-    
+	sock_release(sock.num)
 end sub
                   
 sub callback_stg_error(byref stg_name_or_num as string,index as byte,status as en_stg_status_codes)
@@ -132,7 +130,7 @@ sub emulate_iot_device_telemetry()
 	dim ts, light, temp as string(36)
 	
 	tbl_select("events","events")
-	if tbl_record_read_active(1)=EN_TBL_STATUS_OK then
+	if tbl_record_read_active(1)=EN_TBL_STATUS_OK	then
 		tbl_field_sg("time",ts,EN_TBL_GET)
 		tbl_field_sg("temp",temp,EN_TBL_GET)
 		tbl_field_sg("light",light,EN_TBL_GET)
@@ -156,6 +154,7 @@ end sub
 sub callback_mqtt_sub_ok()
 	
 	iothub_mqtt_sub_ok()
+	
 end sub
 
 sub callback_mqtt_notif(byref topic as string,byref data as string,remaining_bytes as dword)
@@ -323,4 +322,5 @@ end sub
 
 sub callback_iothub_dps_failed()
 	
+	sys.debugprint("dps connection failed\x0d\x0a")
 end sub

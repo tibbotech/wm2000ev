@@ -77,6 +77,7 @@ sub boot()
 			wln.autoconnectpassword=pwd	
 			wln.autodhcp=YES
 			wln.autoconnect=YES
+			sys.reboot()
 		end if	
 	end if
 

@@ -22,7 +22,7 @@ address=
 [address4]
 platform=WM2000
 transport=serial
-address=COM12:921600
+address=COM13:921600
 [address5]
 platform=WM2000
 transport=udp_winpcap

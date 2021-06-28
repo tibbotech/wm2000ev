@@ -23,8 +23,8 @@ dim server_bound_message_topic as string
 dim iothub_init_flag as word
 dim num_of_suback as byte
 dim iothub_dps_sock as byte
-dim iothub_dps_server as string(64)
-dim iothub_assigned_hub as string(64)
+dim iothub_dps_server as string(64)=""
+dim iothub_assigned_hub as string(64)=""
 dim iothub_scope_id as string(16)
 dim iothub_device_id as string(32)
 dim iothub_primary_key as string(64)
@@ -38,6 +38,7 @@ declare sub iothub_debugprint(byref print_data as string)
 declare function iothub_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
 declare sub iothub_dps_device_lookup()
 declare sub iothub_dps_device_provisioning()
+declare sub iothub_dps_connect(byref target_ip as string)
 
 function iothub_init() as ok_ng
 	const END_OF_LINE="\x0d"
@@ -235,7 +236,8 @@ public sub iothub_on_disconnected()
 		#endif
 		exit sub
 	end if
-	
+	dns_stop()
+	dns_start(sock_get("DNS"))
 	mqtt_connect()
 	#if IOTHUB_DEBUG_PRINT
 		iothub_debugprint("Disconnected from server.")
@@ -447,10 +449,16 @@ public sub iothub_proc_timer()
 		iothub_state=EN_IOTHUB_CONNECTING
 		
 	case EN_IOTHUB_IP_OBTAINED:
-	    if dns_connect(iothub_interface,"",0) = EN_STATUS_DNS_OK then
-            dns_query(iothub_dps_server)	
+		if iothub_assigned_hub="" then
+			if dns_connect(iothub_interface,"",0) = EN_STATUS_DNS_OK then
+				dns_query(iothub_dps_server)	
+			end if
+			iothub_state=EN_IOTHUB_DPS_CONNECTING
+		else
+
+			iothub_state=EN_IOTHUB_CONNECTED
 		end if
-		iothub_state=EN_IOTHUB_DPS_CONNECTING
+		iothub_timer=40
 
 	case EN_IOTHUB_CONNECTING,EN_IOTHUB_DISCONNECTED, EN_IOTHUB_CONNECTED:
 	
@@ -464,7 +472,12 @@ public sub iothub_proc_timer()
 			case EN_IOTHUB_IDLE:
 				
 			case EN_IOTHUB_DPS_CONNECTING:
-				
+				callback_iothub_dps_failed()
+				if iothub_assigned_hub="" then
+					dns_stop()
+					dns_start(sock_get("DNS"))
+					iothub_state=EN_IOTHUB_IP_OBTAINED
+				end if
 			case EN_IOTHUB_DEVICE_LOOKUP:
 				if sock.state=PL_SST_EST_TLS then
 					iothub_dps_device_lookup()
@@ -496,32 +509,36 @@ public sub iothub_proc_sock_event()
 	end if
 
 	select case iothub_state
-
+		
 		case EN_IOTHUB_IDLE, EN_IOTHUB_DPS_CONNECTING, EN_IOTHUB_DEVICE_LOOKUP, EN_IOTHUB_PROVISIONING:
-		select case sock.state
-		case PL_SST_CLOSED, PL_SST_CL_PCLOSED,PL_SST_CL_PRESET_EST:
-			sys.debugprint("dps disconnected\x0a")
-			dim resourceUri as string=iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id
-			iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
+		if sock.num=iothub_dps_sock then
+			select case sock.state
+			case PL_SST_CLOSED, PL_SST_CL_PCLOSED,PL_SST_CL_PRESET_EST:
+				sys.debugprint("dps disconnected\x0a")
+				dim resourceUri as string=iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id
+				iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
 
-			callback_iothub_dps_failed()
-			iothub_timer=5
-			
-		case PL_SST_EST_AOPENED:
-			sock.tlshandshake(iothub_dps_server)
-			
-		case PL_SST_EST_TLS:
-			if iothub_timer=0 then
+				callback_iothub_dps_failed()
+				iothub_timer=5
+				
+			case PL_SST_EST_AOPENED:
+				sock.tlshandshake(iothub_dps_server)
+				
+			case PL_SST_EST_TLS:
+'				if iothub_timer=0 then
 				iothub_timer=3
 				select case iothub_state
 				case EN_IOTHUB_DPS_CONNECTING:
 					iothub_state=EN_IOTHUB_DEVICE_LOOKUP
+					
 				case EN_IOTHUB_DEVICE_LOOKUP:
 					iothub_state=EN_IOTHUB_PROVISIONING
+					
 				end select
-				
-			end if
-		end select		
+					
+'				end if
+			end select
+		end if
 	case else
 		mqtt_sock_event(sock.state, sock.statesimple)
 	end select		
@@ -733,6 +750,12 @@ sub iothub_dps_device_provisioning()
 	sock.tlssetdata(content+"\x0d\x0a")
 	sock.send()
 
+end sub
+
+public sub iothub_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
+	if return_type=EN_DNS_RET_IP then
+		iothub_dps_connect(return_string)
+	end if
 end sub
 
 #if IOTHUB_DEBUG_PRINT

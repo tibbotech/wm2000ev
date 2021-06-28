@@ -81,11 +81,10 @@ declare sub iothub_update_telemetry(byref name as string, byref value as string)
 declare sub iothub_send_telemetry(byref timestamp as string)
 declare sub iothub_command_respond(byref command as string, byref returns as string, result as en_iothub_command_codes)
 declare sub iothub_on_telemetry_sent()
-declare sub iothub_dps_connect(byref target_ip as string)
+declare sub iothub_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
 declare sub callback_iothub_dps_failed()
 declare sub callback_iothub_command_triggered(byref command as string, byref params as string)
 declare sub callback_iothub_set_datetime(byref dt_string as string)
 declare sub callback_iothub_device_assigned(byref assigned_hub as string)
 declare sub callback_on_telemetry_sent()
-
 declare iothub_state as en_iothub_states
