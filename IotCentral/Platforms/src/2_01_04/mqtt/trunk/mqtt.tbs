@@ -79,7 +79,7 @@ dim mqtt_packet_length as long
 dim mqtt_client_id as string=""
 dim mqtt_target_interface as pl_sock_interfaces
 dim mqtt_encrypted as boolean
-dim mqtt_unresponed_ping_count as byte=0
+dim mqtt_unreplied_ping_count as byte=0
 
 #if MQTT_DEBUG_PRINT=1
 	declare sub mqtt_debug_print(data as string)
@@ -362,8 +362,8 @@ sub mqtt_ping()
 			#endif
 			mqtt_send_data(chr(PINGREQ)+chr(0))
 			mqtt_ping_counter=MQTT_PING_TIMER*2
-			mqtt_unresponed_ping_count=mqtt_unresponed_ping_count+1
-			if mqtt_unresponed_ping_count>3 then
+			mqtt_unreplied_ping_count=mqtt_unreplied_ping_count+1
+			if mqtt_unreplied_ping_count>3 then
 				mqtt_state=EN_MQTT_STATES_NOT_CONNECTED
 				mqtt_debug_print("PING is unresponsive, disconnecting...")
 				sock.discard()
@@ -571,7 +571,7 @@ sub mqtt_proc_data()
 							mqtt_debug_print("Ping response.")
 						#endif
 						proc_data_state=EN_MQTT_PD_STATES_READING_HEADER
-						mqtt_unresponed_ping_count=0
+						mqtt_unreplied_ping_count=0
 	end select
 
 end sub
@@ -608,7 +608,6 @@ sub mqtt_send_data(data as string)
 			length=length-b
 			data=right(data,len(data)-length)
 #endif
-
 		else
 			if sock.statesimple<>PL_SSTS_EST then
 				mqtt_state=EN_MQTT_STATES_NOT_CONNECTED

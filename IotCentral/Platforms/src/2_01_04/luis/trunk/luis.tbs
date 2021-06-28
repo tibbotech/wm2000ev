@@ -268,7 +268,8 @@ function luis_proc_cmd(byref cmd_str as string) as string
 		goto reply_ok		
 
 	case "E": 'reboot -------------------------------------------
-		wln.disable()		sys.reboot()
+		wln.disable()
+		sys.reboot()
 	
 	case else
 		goto reply_err
