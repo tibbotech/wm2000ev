@@ -17,6 +17,7 @@ const DEVICE_NET_MASK = "255.255.255.0"
 const DEVICE_NET_GATEWAY = "192.168.1.1"
 const S1_TBT00_3_S1_CLK =  PL_IO_NUM_1_TX0
 const S1_TBT00_3_S1_DATA =  PL_IO_NUM_0_RX0
+const FD_INIT_FILE = "DBINIT"
 
 'INCLUDES------------------------------------------------------------
 include "sock\trunk\sock.tbh"

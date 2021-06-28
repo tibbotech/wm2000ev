@@ -77,23 +77,43 @@ sub boot()
 			wln.autoconnectpassword=pwd	
 			wln.autodhcp=YES
 			wln.autoconnect=YES
-			sys.reboot()
+			sys.reboot
 		end if	
 	end if
 
     luis_start(BT_NAME)
-
+	
     'Tables setup
     '================================================================	
     if fd.mount<>PL_FD_STATUS_OK or fd.numservicesectors<100 then
-        if fd.formatj(fd.availableflashspace,32,100)<>PL_FD_STATUS_OK then
-            sys.halt
-        end if
-    
-        if fd.mount<>PL_FD_STATUS_OK then
-            sys.halt
-        end if
-    end if
+		if fd.formatj(fd.availableflashspace,32,100)<>PL_FD_STATUS_OK then
+			sys.halt
+		end if
+
+		if fd.mount<>PL_FD_STATUS_OK then
+			sys.halt
+		end if
+	end if
+	
+	fd.filenum=0
+	if  fd.open(FD_INIT_FILE)<>PL_FD_STATUS_OK then
+		if fd.create(FD_INIT_FILE) <> PL_FD_STATUS_OK then 
+			sys.halt
+		end if
+		fd.open(FD_INIT_FILE)
+		fd.setdata(sys.serialnum)
+		fd.close()
+ 	end if
+
+	if fd.open(FD_INIT_FILE)<>PL_FD_STATUS_OK then
+		sys.halt
+	end if
+	
+	if fd.getdata(128) <> sys.serialnum then 
+		sys.halt
+	end if
+	
+	fd.close()
 	
     if tbl_start()<>EN_TBL_STATUS_OK then
         sys.halt
