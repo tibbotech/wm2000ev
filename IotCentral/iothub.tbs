@@ -484,6 +484,7 @@ public sub iothub_proc_timer()
 				else
 					iothub_dps_connect("")
 				end if
+				iothub_timer=10
 				
 			case EN_IOTHUB_PROVISIONING:
 				if sock.state=PL_SST_EST_TLS then
@@ -525,8 +526,7 @@ public sub iothub_proc_sock_event()
 				sock.tlshandshake(iothub_dps_server)
 				
 			case PL_SST_EST_TLS:
-'				if iothub_timer=0 then
-				iothub_timer=3
+				iothub_timer=5
 				select case iothub_state
 				case EN_IOTHUB_DPS_CONNECTING:
 					iothub_state=EN_IOTHUB_DEVICE_LOOKUP
@@ -534,9 +534,7 @@ public sub iothub_proc_sock_event()
 				case EN_IOTHUB_DEVICE_LOOKUP:
 					iothub_state=EN_IOTHUB_PROVISIONING
 					
-				end select
-					
-'				end if
+				end select				
 			end select
 		end if
 	case else
