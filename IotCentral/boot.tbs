@@ -68,18 +68,15 @@ sub boot()
 	dim ssid as string=stg_get("SSID",0)
 	dim pwd as string=stg_get("KEY",0)
 
-	if ssid="" then
-		wln.autoconnect=NO
-	else
-		if ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd then
-			wln.autoconnect=YES
-			wln.autoconnectssid=ssid
-			wln.autoconnectpassword=pwd	
-			wln.autodhcp=YES
-			wln.autoconnect=YES
-			sys.reboot
-		end if	
-	end if
+	if ssid<>"" and ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd then
+		wln.autoconnect=YES
+		wln.autoconnectssid=ssid
+		wln.autoconnectpassword=pwd	
+		wln.autodhcp=YES
+		wln.autoconnect=YES
+		sys.reboot
+	end if	
+
 
     luis_start(BT_NAME)
 	

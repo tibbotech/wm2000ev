@@ -484,7 +484,7 @@ public sub iothub_proc_timer()
 				else
 					iothub_dps_connect("")
 				end if
-				iothub_timer=10
+				
 				
 			case EN_IOTHUB_PROVISIONING:
 				if sock.state=PL_SST_EST_TLS then
@@ -494,7 +494,8 @@ public sub iothub_proc_timer()
 					iothub_state=EN_IOTHUB_DPS_CONNECTING
 				end if
 
-			end select			
+			end select		
+			iothub_timer=10
 		end if
 	end if
 	sock.num=b
