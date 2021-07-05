@@ -32,7 +32,7 @@ This project demonstrates the following functionality of the WM2000:
 * Time synchronization
 * Playing patterns of light through the integrated RGB LED
 
-Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_01)
+Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_01).
 
 <br>
 
@@ -47,4 +47,23 @@ This project demonstrates the following functionality of the WM2000:
 * Controlling the RGB LED's output by manipulating its three control lines with PWM
 * Using a built-in web interface to provide real-time control over the module
 
-Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_02)
+Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_02).
+
+<br>
+
+### Azure ###
+This application demonstrates the WM2000's ability to securely transmit data to leading cloud services provider Microsoft Azure, as well as receive commands to control the WM2000EV's built-in RGB LED. Two-way communications are crucial for implementing IIoT and industrial automation solutions.
+
+This project might require a firmware update due to a new API method. For your convenience, we have made available a Tibbo Composite Uncompressed (TCU) file containing the firmware, Companion App, and this project. Download the TCU file [here](https://tibbo.com/downloads/open/azureiot_demo-wm2000.tcu).
+
+This project demonstrates the following functionality of the WM2000:
+* Updating the firmware and dual compiled Tibbo BASIC application binaries via BLE
+* Using L.U.I.S. to configure the device over BLE
+* Automatic association with a Wi-Fi network
+* Scheduled, redundant, and secure data transmission through TLS
+* Polling the built-in light and temperature sensors
+* Storing data in the integrated flash disk
+* Time synchronization
+* Sending and receiving commands to play patterns of light through the integrated RGB LED
+
+Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_03).
