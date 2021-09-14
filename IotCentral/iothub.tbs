@@ -537,8 +537,6 @@ public sub iothub_proc_sock_event()
 				end select				
 			end select
 		end if
-	case else
-		mqtt_sock_event(sock.state, sock.statesimple)
 	end select		
 
 end sub

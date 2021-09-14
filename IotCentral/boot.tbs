@@ -69,7 +69,7 @@ sub boot()
 	dim pwd as string=stg_get("KEY",0)
 
 	if ssid="" then
-		wln.autoconnect=NO
+'		wln.autoconnect=NO
 	else
 		if ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd then
 			wln.autoconnect=YES

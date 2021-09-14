@@ -23,7 +23,7 @@ sub on_sys_timer()
 end sub
 
 sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
-
+	mqtt_sock_event(sock.state, sock.statesimple)
 	iothub_proc_sock_event()
 end sub
 

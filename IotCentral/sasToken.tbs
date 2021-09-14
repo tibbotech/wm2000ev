@@ -84,9 +84,11 @@ sub base64_decode(byref input as string, byref result as string)
 	dim j as byte
 	dim v as dword
 	dim out as byte(255)
-	dim in as byte(255) = strgen(255,"\x00")
-	
-	in=input
+	dim in as byte(255)
+	for i = 0 to 255 - 1
+		in(i) = 0
+	next i
+	in = input
 	
 	for i = 0 to 255 - 1
 		if in(i) <> 0 then
