@@ -31,6 +31,7 @@ dim iothub_primary_key as string(64)
 dim iothub_sas_token as string
 dim iothub_timer as byte=0
 dim iothub_dps_authorization as string
+dim iothub_current_url as string
 
 declare mqtt_sock_num as byte
 declare function iothub_init() as ok_ng
@@ -676,8 +677,8 @@ end sub
 
 public sub iothub_on_ip_otained()
 
-    http_request(HTTP_POST, "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31", PL_SOCK_INTERFACE_WLN,"{registrationId: \x222o0jgbdlqh2\x22}")
-	
+	iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31"
+    http_request(HTTP_POST, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x222o0jgbdlqh2\x22}")
 	
 end sub
 
@@ -764,6 +765,29 @@ sub iot_send_headers()
     end if
 	
 end sub
+
+sub iothub_open_romfile()
+
+
+
+end sub
+
+sub iot_content_arrival(data as string)
+
+	dim open_quote_pos, close_quote_pos as byte
+	dim key, value as string
+	dim instance as byte = 1
+	while open_quote_pos<>0 and close_quote_pos<>0 
+		open_quote_pos = instr(0, data, "\x22",instance)
+		close_quote_pos = instr(0, data, "\x22",instance+1)
+		key = mid(data,open_quote_pos+1,close_quote_pos-open_quote_pos-1)
+		sys.debugprint(key)
+		instance = instance + 2
+	wend
+	
+end sub
+
+
 
 #if IOTHUB_DEBUG_PRINT
 	sub iothub_debugprint(byref print_data as string)
