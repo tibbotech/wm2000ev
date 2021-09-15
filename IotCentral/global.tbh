@@ -7,6 +7,7 @@
 #define MQTT_SSL 1
 #define MQTT_LARGE_PACKETS 1
 #define MQTT_DEBUG_PRINT 1
+#define HTTP_DEBUG_PRINT 1
 
 const FIRMWARE_VERSION="{WM2000EV_IotCentral 1.0.0}"
 const MAX_NUM_INTERFACES=4
@@ -37,6 +38,7 @@ include "super_i2c\trunk\super_i2c.tbh"
 include "libraries\tbt28.tbh"
 include "libraries\tbt29.tbh"
 include "ssi\trunk\ssi.tbh"
+include "libraries\http.tbh"
 
 
 'DECLARATIONS--------------------------------------------------------

@@ -12,19 +12,27 @@ end sub
 sub on_sock_data_arrival()
 
 	dns_proc_data()
-	iothub_proc_data()
+'	iothub_proc_data()
+	mqtt_proc_data()
+    http_proc_data()
+
 end sub
 
 sub on_sys_timer()
 
 	dns_proc_timer()
-	iothub_proc_timer()
+'	iothub_proc_timer()
+	mqtt_proc_timer()
 	device_proc_timer()
+    http_proc_timer()
+
 end sub
 
 sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
 	mqtt_sock_event(sock.state, sock.statesimple)
-	iothub_proc_sock_event()
+'	iothub_proc_sock_event()
+    http_sock_state_update(newstatesimple)
+
 end sub
 
 sub on_button_pressed()

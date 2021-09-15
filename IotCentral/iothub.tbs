@@ -676,7 +676,9 @@ end sub
 
 public sub iothub_on_ip_otained()
 
-	iothub_state=EN_IOTHUB_IP_OBTAINED	
+    http_request(HTTP_POST, "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31", PL_SOCK_INTERFACE_WLN,"{registrationId: \x222o0jgbdlqh2\x22}")
+	
+	
 end sub
 
 public sub iothub_on_telemetry_sent()
@@ -752,6 +754,15 @@ public sub iothub_dns_answer_acquired(return_type as en_dns_return_type, byref r
 	if return_type=EN_DNS_RET_IP then
 		iothub_dps_connect(return_string)
 	end if
+end sub
+
+sub iot_send_headers()
+
+  if http_request_item.url = "https://global.azure-devices-provisioning.net/0ne002A0695/registrations/2o0jgbdlqh2?api-version=2019-03-31" then
+        http_send_headers("Content-Type","application/json")
+		http_send_headers("Authorization", "SharedAccessSignature sr="+iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id+"&sig="+iothub_dps_authorization)
+    end if
+	
 end sub
 
 #if IOTHUB_DEBUG_PRINT
