@@ -32,6 +32,9 @@ dim iothub_sas_token as string
 dim iothub_timer as byte=0
 dim iothub_dps_authorization as string
 dim iothub_current_url as string
+dim iothub_current_json_key as string
+dim iothub_current_json_value as string
+dim iothub_currently_reading_key as boolean
 
 declare mqtt_sock_num as byte
 declare function iothub_init() as ok_ng
@@ -206,8 +209,16 @@ public sub iothub_start(byref device_id as string, byref scope_id as string, byr
 
 	iothub_state=EN_IOTHUB_IDLE
 	iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
+	
+	iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31"
+    http_request(HTTP_POST, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")
+	iothub_state=EN_IOTHUB_DEVICE_LOOKUP
+	
 end sub
 
+function iothub_get_url() as string
+	iothub_get_url=iothub_current_url
+end function
 public sub iothub_on_connected()
 
 	if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
@@ -677,8 +688,6 @@ end sub
 
 public sub iothub_on_ip_otained()
 
-	iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31"
-    http_request(HTTP_POST, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x222o0jgbdlqh2\x22}")
 	
 end sub
 
@@ -729,25 +738,31 @@ sub iothub_dps_device_lookup()
 end sub
 
 sub iothub_dps_device_provisioning()
-	dim content as string = "{registrationId: \x22"+iothub_device_id+"\x22}"
+'	dim content as string = "{registrationId: \x22"+iothub_device_id+"\x22}"
 	
-	sock.num=iothub_dps_sock
-	if sock.state<>PL_SST_EST_TLS then
-		exit sub
-	end if
+'	sock.num=iothub_dps_sock
+'	if sock.state<>PL_SST_EST_TLS then
+'		exit sub
+'	end if
 
-	sys.debugprint("DPS device provisioning\x0d\x0a")
-	sock.tlssetdata("PUT /"+iothub_scope_id+"/registrations/"+iothub_device_id+"/register?api-version=2019-03-31 HTTP/1.1\x0d\x0a")
+'	sys.debugprint("DPS device provisioning\x0d\x0a")
+'	sock.tlssetdata("PUT /"+iothub_scope_id+"/registrations/"+iothub_device_id+"/register?api-version=2019-03-31 HTTP/1.1\x0d\x0a")
 
-	sock.tlssetdata("Host: "+iothub_dps_server+"\x0d\x0a")
-	sock.tlssetdata("Content-Length: "+str(len(content))+"\x0d\x0a")
+'	sock.tlssetdata("Host: "+iothub_dps_server+"\x0d\x0a")
+'	sock.tlssetdata("Content-Length: "+str(len(content))+"\x0d\x0a")
 
-	sock.tlssetdata("Content-Type: application/json\x0d\x0a")
-	sock.tlssetdata("Authorization: SharedAccessSignature sr="+iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id+"&sig=")
-	sock.tlssetdata(iothub_dps_authorization)
-	sock.tlssetdata("\x0d\x0a\x0d\x0a")	
-	sock.tlssetdata(content+"\x0d\x0a")
-	sock.send()
+'	sock.tlssetdata("Content-Type: application/json\x0d\x0a")
+'	sock.tlssetdata("Authorization: SharedAccessSignature sr="+iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id+"&sig=")
+'	sock.tlssetdata(iothub_dps_authorization)
+'	sock.tlssetdata("\x0d\x0a\x0d\x0a")	
+'	sock.tlssetdata(content+"\x0d\x0a")
+'	sock.send()
+	
+	
+	iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"/register?api-version=2019-03-31"
+    http_request(HTTP_PUT, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")
+	
+	
 
 end sub
 
@@ -759,34 +774,86 @@ end sub
 
 sub iot_send_headers()
 
-  if http_request_item.url = "https://global.azure-devices-provisioning.net/0ne002A0695/registrations/2o0jgbdlqh2?api-version=2019-03-31" then
+  if http_request_item.url = iothub_current_url then
         http_send_headers("Content-Type","application/json")
 		http_send_headers("Authorization", "SharedAccessSignature sr="+iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id+"&sig="+iothub_dps_authorization)
     end if
 	
 end sub
 
-sub iothub_open_romfile()
+function get_JSON_value(data as string, search_key as string) as string
+
+	dim frompos as byte = 1
+	dim counter as byte = 0
+	while true
+		dim next_char as string = mid(data,frompos,1)
+		select case next_char
+		case "{":
+			iothub_currently_reading_key=true
+		case "}":
+		case "\x22":
+			if counter = 0 then
+				counter=counter+1
+			else
+				if iothub_currently_reading_key=true then
+					iothub_currently_reading_key=false
+				else
+					iothub_currently_reading_key=true
+				end if
+			end if
+		case else:
+			if iothub_currently_reading_key=true then
+				iothub_current_json_key=iothub_current_json_key+next_char
+			else
+				iothub_current_json_value=iothub_current_json_value+next_char
+			end if			
+		end select	
+		frompos=frompos+1
+	wend
 
 
-
-end sub
+'	dim open_quote_pos as byte = 255
+'	dim close_quote_pos as byte = 255
+'	dim instance as byte = 1
+'	while open_quote_pos<>0 and close_quote_pos<>0 
+'		open_quote_pos = instr(0, data, "\x22",instance)
+'		close_quote_pos = instr(0, data, "\x22",instance+1)
+'		iothub_current_json_key = mid(data,open_quote_pos+1,close_quote_pos-open_quote_pos-1)
+'		instance = instance + 2
+'		if open_quote_pos=0 or close_quote_pos=0 then
+			
+'		end if
+'		open_quote_pos = instr(0, data, "\x22",instance)
+'		close_quote_pos = instr(0, data, "\x22",instance+1)
+'		iothub_current_json_value  = mid(data,open_quote_pos+1,close_quote_pos-open_quote_pos-1)
+'		instance = instance + 2
+'		sys.debugprint("Key: " + iothub_current_json_key + "\tValue: " + iothub_current_json_value  + "\r\n")
+'		if iothub_current_json_key=search_key then
+'			get_JSON_value=iothub_current_json_value
+'			exit while
+'		end if
+'	wend
+	
+end function
 
 sub iot_content_arrival(data as string)
-
-	dim open_quote_pos, close_quote_pos as byte
-	dim key, value as string
-	dim instance as byte = 1
-	while open_quote_pos<>0 and close_quote_pos<>0 
-		open_quote_pos = instr(0, data, "\x22",instance)
-		close_quote_pos = instr(0, data, "\x22",instance+1)
-		key = mid(data,open_quote_pos+1,close_quote_pos-open_quote_pos-1)
-		sys.debugprint(key)
-		instance = instance + 2
-	wend
+	
+	dim s as string = get_JSON_value(data, "assignedHub")
+	if s<>"" then
+		callback_iothub_device_assigned(s)
+		iothub_state=EN_IOTHUB_PROVISIONING
+	end if
 	
 end sub
 
+sub iot_request_complete()
+
+	if iothub_state=EN_IOTHUB_PROVISIONING then
+		iothub_dps_device_provisioning() 
+		iothub_state=EN_IOTHUB_REGISTERED
+	end if
+
+end sub
 
 
 #if IOTHUB_DEBUG_PRINT

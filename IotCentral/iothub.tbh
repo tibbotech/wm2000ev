@@ -77,6 +77,7 @@ declare sub iothub_proc_mqtt_msg(byref topic as string, byref data as string)
 declare sub iothub_on_ip_otained()
 declare sub iothub_mqtt_sub_ok()
 declare function iothub_json_helper(byref original as string, byref attribute as string, byref value as string) as string
+declare function iothub_get_url() as string
 declare sub iothub_update_telemetry(byref name as string, byref value as string)
 declare sub iothub_send_telemetry(byref timestamp as string)
 declare sub iothub_command_respond(byref command as string, byref returns as string, result as en_iothub_command_codes)
@@ -90,4 +91,5 @@ declare sub callback_on_telemetry_sent()
 declare sub iot_send_headers()
 declare sub iot_content_arrival(data as string)
 declare sub iothub_open_romfile()
+declare sub iot_request_complete()
 declare iothub_state as en_iothub_states

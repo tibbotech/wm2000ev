@@ -121,12 +121,7 @@ sub boot()
 	
     pat.play("B-B-B-",PL_PAT_CANINT)
 	
-	dim device_primary_key as string=stg_get("PKEY",0)
-	dim scope_id as string=stg_get("SCID",0)
-	dim device_id as string=stg_get("DVID",0)
-	dim dps_server as string=stg_get("DPSS",0)
-	
-	iothub_start(device_id, scope_id, dps_server, device_primary_key, PL_SOCK_INTERFACE_WLN)	
+
 	led_pattern="R-G-B-R-G-B-R-G-B-"
 end sub
 

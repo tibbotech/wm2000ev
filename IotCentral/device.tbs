@@ -367,6 +367,8 @@ end sub
 
 
 sub callback_http_request_complete()
+
+	iot_request_complete()
     
 end sub
 
@@ -377,7 +379,8 @@ end sub
 
 function callback_http_open_romfile() as dword
     
-	if http_request_item.url = "https://global.azure-devices-provisioning.net/0ne002A0695/registrations/2o0jgbdlqh2?api-version=2019-03-31" then
+	dim url as string = iothub_get_url()
+	if http_request_item.url = url then
 		callback_http_open_romfile=0
 		romfile.open("azure.cer")
 		callback_http_open_romfile=romfile.offset    

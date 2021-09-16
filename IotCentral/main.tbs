@@ -54,7 +54,13 @@ sub on_sys_dhcp_ok(renew as enum no_yes, interface as enum pl_sock_interfaces, i
 	wln.gatewayip=gateway_ip
 	wln.netmask=netmask
 	sys.debugprint("IP obtained: "+wln.ip+" gateway: "+wln.gatewayip+" netmask: "+wln.netmask+"\x0d")
-	iothub_on_ip_otained()
+	
+	dim device_primary_key as string=stg_get("PKEY",0)
+	dim scope_id as string=stg_get("SCID",0)
+	dim device_id as string=stg_get("DVID",0)
+	dim dps_server as string=stg_get("DPSS",0)
+	
+	iothub_start(device_id, scope_id, dps_server, device_primary_key, PL_SOCK_INTERFACE_WLN)	
 end sub
 
 sub on_sys_dhcp_failure(interface as enum pl_sock_interfaces)
