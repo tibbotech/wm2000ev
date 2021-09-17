@@ -368,7 +368,7 @@ end sub
 
 sub callback_http_request_complete()
 
-	iot_request_complete()
+	iothub_request_complete()
     
 end sub
 

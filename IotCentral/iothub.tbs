@@ -21,7 +21,7 @@ dim iothub_sending_telemetry as no_yes = NO
 dim device_bound_message_topic as string(64)
 dim server_bound_message_topic as string
 dim iothub_init_flag as word
-dim num_of_suback as byte
+dim iothub_num_of_suback as byte
 dim iothub_dps_sock as byte
 dim iothub_dps_server as string(64)=""
 dim iothub_assigned_hub as string(64)=""
@@ -32,6 +32,7 @@ dim iothub_sas_token as string
 dim iothub_timer as byte=0
 dim iothub_dps_authorization as string
 dim iothub_current_url as string
+dim iothub_http_buf as string
 dim iothub_current_json_key as string
 dim iothub_current_json_value as string
 dim iothub_currently_reading_key as boolean
@@ -43,6 +44,7 @@ declare function iothub_get_descriptor_field(line_end_pos as word, byref field_s
 declare sub iothub_dps_device_lookup()
 declare sub iothub_dps_device_provisioning()
 declare sub iothub_dps_connect(byref target_ip as string)
+declare sub iothub_http_reset()
 
 function iothub_init() as ok_ng
 	const END_OF_LINE="\x0d"
@@ -209,10 +211,6 @@ public sub iothub_start(byref device_id as string, byref scope_id as string, byr
 
 	iothub_state=EN_IOTHUB_IDLE
 	iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
-	
-	iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31"
-    http_request(HTTP_POST, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")
-	iothub_state=EN_IOTHUB_DEVICE_LOOKUP
 	
 end sub
 
@@ -444,38 +442,38 @@ end sub
 
 public sub iothub_proc_timer()
 
-	dim b as byte
+'	dim b as byte
 	
-	b=sock.num
-	sock.num=iothub_dps_sock
+'	b=sock.num
+'	sock.num=iothub_dps_sock
 
-	select case iothub_state
-	case EN_IOTHUB_REGISTERED:
-		sock_release(iothub_dps_sock)
+'	select case iothub_state
+'	case EN_IOTHUB_REGISTERED:
+'		sock_release(iothub_dps_sock)
 	
-		dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+API_VERSION		
-		dim resourceUri as string= iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id
-		dns_start(sock_get("DNS"))
-		iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+ generateSasToken(resourceUri, iothub_primary_key, 525600)
-		mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
-		iothub_state=EN_IOTHUB_CONNECTING
+'		dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+API_VERSION		
+'		dim resourceUri as string= iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id
+'		dns_start(sock_get("DNS"))
+'		iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+ generateSasToken(resourceUri, iothub_primary_key, 525600)
+'		mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
+'		iothub_state=EN_IOTHUB_CONNECTING
 		
-	case EN_IOTHUB_IP_OBTAINED:
-		if iothub_assigned_hub="" then
-			if dns_connect(iothub_interface,"",0) = EN_STATUS_DNS_OK then
-				dns_query(iothub_dps_server)	
-			end if
-			iothub_state=EN_IOTHUB_DPS_CONNECTING
-		else
+'	case EN_IOTHUB_IP_OBTAINED:
+'		if iothub_assigned_hub="" then
+'			if dns_connect(iothub_interface,"",0) = EN_STATUS_DNS_OK then
+'				dns_query(iothub_dps_server)	
+'			end if
+'			iothub_state=EN_IOTHUB_DPS_CONNECTING
+'		else
 
-			iothub_state=EN_IOTHUB_CONNECTED
-		end if
-		iothub_timer=40
+'			iothub_state=EN_IOTHUB_CONNECTED
+'		end if
+'		iothub_timer=40
 
-	case EN_IOTHUB_CONNECTING,EN_IOTHUB_DISCONNECTED, EN_IOTHUB_CONNECTED:
+'	case EN_IOTHUB_CONNECTING,EN_IOTHUB_DISCONNECTED, EN_IOTHUB_CONNECTED:
 	
-		mqtt_proc_timer()
-	end select
+'		mqtt_proc_timer()
+'	end select
 	
 	if iothub_timer>0 then
 		iothub_timer=iothub_timer-1
@@ -483,33 +481,33 @@ public sub iothub_proc_timer()
 			select case iothub_state
 			case EN_IOTHUB_IDLE:
 				
-			case EN_IOTHUB_DPS_CONNECTING:
-				callback_iothub_dps_failed()
-				if iothub_assigned_hub="" then
-					dns_stop()
-					dns_start(sock_get("DNS"))
-					iothub_state=EN_IOTHUB_IP_OBTAINED
-				end if
+'			case EN_IOTHUB_DPS_CONNECTING:
+'				callback_iothub_dps_failed()
+'				if iothub_assigned_hub="" then
+'					dns_stop()
+'					dns_start(sock_get("DNS"))
+'					iothub_state=EN_IOTHUB_IP_OBTAINED
+'				end if
 			case EN_IOTHUB_DEVICE_LOOKUP:
-				if sock.state=PL_SST_EST_TLS then
-					iothub_dps_device_lookup()
-				else
-					iothub_dps_connect("")
-				end if
+				iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31"
+				iothub_http_reset()
+				http_request(HTTP_POST, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")
+				iothub_state=EN_IOTHUB_DEVICE_LOOKUP
 				iothub_timer=10
 				
 			case EN_IOTHUB_PROVISIONING:
-				if sock.state=PL_SST_EST_TLS then
-					iothub_dps_device_provisioning()
-				else
-					iothub_dps_connect("")
-					iothub_state=EN_IOTHUB_DPS_CONNECTING
-				end if
+'				if sock.state=PL_SST_EST_TLS then
+'					iothub_dps_device_provisioning()
+'				else
+'					iothub_dps_connect("")
+'					iothub_state=EN_IOTHUB_DPS_CONNECTING
+'				end if
+				iothub_dps_device_provisioning()
 
 			end select			
 		end if
 	end if
-	sock.num=b
+'	sock.num=b
 	
 end sub
 
@@ -679,8 +677,8 @@ public function iothub_json_helper(byref original as string, byref attribute as 
 end function
 
 public sub iothub_mqtt_sub_ok()
-	num_of_suback=num_of_suback+1
-	if num_of_suback>4 then
+	iothub_num_of_suback=iothub_num_of_suback+1
+	if iothub_num_of_suback>4 then
 		iothub_rid=iothub_rid+1
 		mqtt_publish(TOPIC_TWIN+"GET/?$rid="+str(iothub_rid),"{}",QOS_AT_MOST_ONCE)
 	end if
@@ -760,6 +758,7 @@ sub iothub_dps_device_provisioning()
 	
 	
 	iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"/register?api-version=2019-03-31"
+	iothub_http_reset()
     http_request(HTTP_PUT, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")
 	
 	
@@ -800,6 +799,7 @@ function get_JSON_value(data as string, search_key as string) as string
 				else
 					iothub_currently_reading_key=true
 				end if
+				counter=0
 			end if
 		case else:
 			if iothub_currently_reading_key=true then
@@ -833,24 +833,92 @@ function get_JSON_value(data as string, search_key as string) as string
 '			exit while
 '		end if
 '	wend
-	
 end function
 
-sub iot_content_arrival(data as string)
-	
-	dim s as string = get_JSON_value(data, "assignedHub")
-	if s<>"" then
-		callback_iothub_device_assigned(s)
-		iothub_state=EN_IOTHUB_PROVISIONING
+sub iothub_json_callback(byref key as string, byref value as string)
+	select case iothub_state
+	case EN_IOTHUB_DEVICE_LOOKUP:
+		
+	case EN_IOTHUB_PROVISIONING:
+		
+	end select
+	if iothub_state=EN_IOTHUB_DEVICE_LOOKUP then
+		if key = "assignedHub" then
+			callback_iothub_device_assigned(value)
+			iothub_state=EN_IOTHUB_PROVISIONING
+		end if
+	else if iothub_state=EN_IOTHUB_PROVISIONING then
+		if key = "status" and value = "assigned" then
+			iothub_state=EN_IOTHUB_REGISTERED
+		end if
 	end if
 	
 end sub
 
-sub iot_request_complete()
+function iothub_parse_http(data as string) as string
+	iothub_parse_http = ""
+	dim start_pos as byte = 0
+	dim end_pos as byte = 0
+	dim parsing as boolean = true
+	dim segment_length as byte
+	
+	while parsing = true
+		segment_length = 255 - len(iothub_http_buf)
+		if segment_length > len(data) then
+			segment_length = len(data)
+		end if
+		iothub_http_buf = iothub_http_buf + mid(data,1,segment_length)
+		data = right(data,len(data) - segment_length)
+		start_pos = instr(1,iothub_http_buf,"\x22",1)
+		end_pos = instr(1,iothub_http_buf,"\x22",2)
+		
+		if end_pos <> 0 then
+			dim item as string = mid(iothub_http_buf,start_pos + 1,end_pos - start_pos - 1)
+			if iothub_current_json_key = "" then
+				iothub_current_json_key = item
+			else if iothub_current_json_value = "" then
+				iothub_current_json_value = item
+				iothub_json_callback(iothub_current_json_key, iothub_current_json_value)
+				iothub_current_json_key = ""
+				iothub_current_json_value = ""
+			end if
+		end if
+		if end_pos <> 0 then
+			iothub_http_buf = right(iothub_http_buf,len(iothub_http_buf) - end_pos)
+		else
+			parsing = false
+		end if
+		
+	wend
+	
+	
+		
+
+end function
+
+sub iot_content_arrival(data as string)
+	
+	if http_request_item.url = iothub_current_url then
+		iothub_parse_http(data)
+	end if
+'	dim s as string = get_JSON_value(data, "assignedHub")
+'	if s<>"" then
+'		callback_iothub_device_assigned(s)
+'		iothub_state=EN_IOTHUB_PROVISIONING
+'	end if
+	
+end sub
+
+sub iothub_http_reset()
+	iothub_http_buf = ""
+	iothub_current_json_key = ""
+	iothub_current_json_value = ""
+end sub
+
+sub iothub_request_complete()
 
 	if iothub_state=EN_IOTHUB_PROVISIONING then
-		iothub_dps_device_provisioning() 
-		iothub_state=EN_IOTHUB_REGISTERED
+		iothub_dps_device_provisioning()
 	end if
 
 end sub

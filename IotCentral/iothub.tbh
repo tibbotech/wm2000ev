@@ -91,5 +91,5 @@ declare sub callback_on_telemetry_sent()
 declare sub iot_send_headers()
 declare sub iot_content_arrival(data as string)
 declare sub iothub_open_romfile()
-declare sub iot_request_complete()
+declare sub iothub_request_complete()
 declare iothub_state as en_iothub_states
