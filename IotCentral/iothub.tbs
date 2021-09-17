@@ -747,7 +747,7 @@ end sub
 sub iothub_mqtt_start()
 	
 	iothub_state=EN_IOTHUB_CONNECTED
-	dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+IOTHUB_API_VERSION	
+	dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+"/"+IOTHUB_API_VERSION	
 	dim resourceUri as string=iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id
 	iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+ iothub_dps_authorization
 	mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
