@@ -48,3 +48,4 @@ declare function generateSasToken(byref resourceUri as string, byref signingKey 
 declare TBT00_3_S1_CHANNEL_NUM as byte
 declare led_pattern_index as byte
 declare led_pattern as string
+declare DNS_socket as byte

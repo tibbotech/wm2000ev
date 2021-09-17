@@ -37,15 +37,11 @@ enum en_iothub_command_codes
 end enum
 
 enum en_iothub_states
-	EN_IOTHUB_IDLE,
-	EN_IOTHUB_DPS_CONNECTING,
+	EN_IOTHUB_NOT_CONNECTED,
 	EN_IOTHUB_DEVICE_LOOKUP,
 	EN_IOTHUB_PROVISIONING,
-	EN_IOTHUB_REGISTERED,
-	EN_IOTHUB_IP_OBTAINED,
-	EN_IOTHUB_CONNECTING,
-	EN_IOTHUB_DISCONNECTED,
-	EN_IOTHUB_CONNECTED
+	EN_IOTHUB_CONNECTED,
+	EN_IOTHUB_DISCONNECTED
 end enum
 
 type struct_iothub_telemetry
@@ -72,6 +68,7 @@ declare sub iothub_proc_timer()
 declare sub iothub_proc_data()
 declare sub iothub_proc_sock_event()
 declare sub iothub_on_connected()
+declare sub iothub_device_lookup()	 
 declare sub iothub_on_disconnected()
 declare sub iothub_proc_mqtt_msg(byref topic as string, byref data as string)
 declare sub iothub_on_ip_otained()
@@ -91,5 +88,5 @@ declare sub callback_on_telemetry_sent()
 declare sub iot_send_headers()
 declare sub iot_content_arrival(data as string)
 declare sub iothub_open_romfile()
-declare sub iothub_request_complete()
+declare sub iothub_http_request_complete()
 declare iothub_state as en_iothub_states

@@ -23,6 +23,7 @@ end sub
 sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
 
     http_dns_answer_acquired(return_type, return_string)
+    mqtt_dns_answer_acquired(return_type, return_string)
 
 '	if iothub_state=EN_IOTHUB_DPS_CONNECTING then
 '		iothub_dns_answer_acquired(return_type,return_string)
@@ -367,9 +368,9 @@ end sub
 
 
 sub callback_http_request_complete()
-
-	iothub_request_complete()
     
+	iothub_http_request_complete()
+	
 end sub
 
 

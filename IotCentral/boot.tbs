@@ -1,6 +1,7 @@
 include "global.tbh"
 
 declare sub init_rgb_led_io()
+dim DNS_socket as byte
 
 sub boot()
 	init_rgb_led_io()
@@ -118,6 +119,9 @@ sub boot()
     if tbl_start()<>EN_TBL_STATUS_OK then
         sys.halt
     end if
+	
+    DNS_socket=sock_get("DNS")
+    dns_start(DNS_socket)
 	
     pat.play("B-B-B-",PL_PAT_CANINT)
 	

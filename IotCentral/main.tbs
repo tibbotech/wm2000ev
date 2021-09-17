@@ -4,19 +4,13 @@ dim TBT00_3_S1_CHANNEL_NUM as byte
 
 declare sub device_proc_timer()
 
-dim str1 as string = "{\x22aa\x22:\x22bb"
-dim str2 as string = "\x22,\x22cc\x22:\x22dd\x22}"
-
 sub on_sys_init()
-'	iot_content_arrival(str1)
-'	iot_content_arrival(str2)
     boot()
 end sub
 
 sub on_sock_data_arrival()
 
 	dns_proc_data()
-'	iothub_proc_data()
 	mqtt_proc_data()
     http_proc_data()
 
