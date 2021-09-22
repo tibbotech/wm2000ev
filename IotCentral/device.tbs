@@ -339,6 +339,9 @@ end sub
 
 
 sub callback_http_header_arrival(header_type as string, header_value as string)
+
+	iot_header_arrival(header_type, header_value)
+
 end sub
 
 

@@ -89,4 +89,5 @@ declare sub iot_send_headers()
 declare sub iot_content_arrival(data as string)
 declare sub iothub_open_romfile()
 declare sub iothub_http_request_complete()
+declare sub iot_header_arrival(header_type as string, header_value as string)
 declare iothub_state as en_iothub_states
