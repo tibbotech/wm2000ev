@@ -424,7 +424,7 @@ public sub iothub_proc_timer()
 	select case iothub_state
 	case EN_IOTHUB_NOT_CONNECTED:
 		iothub_device_lookup()			
-	case EN_IOTHUB_PROVISIONING:
+	case EN_IOTHUB_NOT_PROVISIONED:
 		iothub_dps_device_provisioning()
 	end select				
 
@@ -531,11 +531,14 @@ sub iothub_device_lookup()
 end sub
 
 sub iothub_dps_device_provisioning()
-
-	iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"/register"+IOTHUB_API_VERSION
-	iothub_http_reset()
-    http_request(HTTP_PUT, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")	
-
+ 
+	if iothub_state<>EN_IOTHUB_PROVISIONING then
+		iothub_state=EN_IOTHUB_PROVISIONING
+		iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"/register"+IOTHUB_API_VERSION
+		iothub_http_reset()
+		http_request(HTTP_PUT, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")	
+	end if
+	
 end sub
 
 public sub iothub_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
@@ -573,6 +576,9 @@ sub iothub_json_callback(byref key as string, byref value as string)
 		end if
 		if key = "status" and value = "assigned" then
 			iothub_assigned_status=true
+		end if
+		if key = "errorCode" and value  = "trackingId" then
+			iothub_assigned_status=false
 		end if
 	case EN_IOTHUB_PROVISIONING:
 		if key = "status" and value = "assigned" then
@@ -625,27 +631,25 @@ sub iot_header_arrival(header_type as string, header_value as string)
 	if header_type = "Date" then
 		callback_iothub_set_datetime(header_value)
 	end if
+	
 end sub
 
 sub iothub_http_request_complete()
 	
 	
 	if http_request_item.url = iothub_current_url then
-
-		select case iothub_state
-		
-		case EN_IOTHUB_DEVICE_LOOKUP, EN_IOTHUB_PROVISIONING:
+		select case iothub_state		
+		case EN_IOTHUB_DEVICE_LOOKUP:
+			if iothub_assigned_status=false then
+				iothub_state=EN_IOTHUB_NOT_PROVISIONED
+			end if
 			if iothub_assigned_hub<>"" and iothub_assigned_status<>false then
 				iothub_mqtt_start()
-			end if
-		case EN_IOTHUB_CONNECTED:
-			
-		case EN_IOTHUB_DISCONNECTED:
-			
+			end if	
+		case EN_IOTHUB_PROVISIONING:
+			iothub_state=EN_IOTHUB_NOT_CONNECTED
 		end select
-	
 	end if
-	
 end sub
 
 sub iot_content_arrival(data as string)
