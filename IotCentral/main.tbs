@@ -28,7 +28,6 @@ end sub
 
 sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
 	mqtt_sock_event(sock.state, sock.statesimple)
-'	iothub_proc_sock_event()
     http_sock_state_update(newstatesimple)
 
 end sub
@@ -70,16 +69,13 @@ sub on_sock_data_sent()
 end sub
 
 sub on_bt_event(bt_event as pl_bt_events)
-
     luis_on_bt_event(bt_event)
 end sub
 
 sub on_bt_data_sent()
-
     luis_on_bt_data_sent()
 end sub
 
 sub on_bt_data_arrival()
-
     luis_on_bt_data_arrival()
 end sub

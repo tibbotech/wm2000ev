@@ -84,11 +84,9 @@ sub base64_decode(byref input as string, byref result as string)
 	dim j as byte
 	dim v as dword
 	dim out as byte(255)
-	dim in as byte(255)
-	for i = 0 to 255 - 1
-		in(i) = 0
-	next i
-	in = input
+	dim in as byte(255) = strgen(255,"\x00")
+	
+	in=input
 	
 	for i = 0 to 255 - 1
 		if in(i) <> 0 then
@@ -160,7 +158,9 @@ function generateSasToken(byref resourceUri as string, byref signingKey as strin
 	
 	message=resourceUri+"\x0A"+lstr(expires)
 	base64_decode(signingKey,key)
+	sock.tlsinit(0)
 	hmac256(key,message,result)
+	sock.tlsdeinit()
 	
 
 	for i=0 to len(result)/2-1

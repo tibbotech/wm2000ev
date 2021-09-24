@@ -8,12 +8,12 @@ const IOTHUB_TOPIC_TWIN="$iothub/twin/"
 const IOTHUB_TOPIC_STREAMS="$iothub/streams/POST/"
 const IOTHUB_TOPIC_RESULT="$iothub/twin/res/"
 const IOTHUB_API_VERSION="?api-version=2019-03-31"
+const IOTHUB_MQTT_API_VERSION="?api-version=2018-06-30"
 const TOPIC_TIMESTAMP="iothub-creation-time-utc="
 
 dim iothub_telemetry(IOTHUB_TELEMETRY_NUM) as struct_iothub_telemetry
 dim iothub_property(IOTHUB_PROPERTY_NUM) as struct_iothub_property
 dim iothub_command(IOTHUB_COMMAND_NUM) as struct_iothub_command
-
 dim iothub_state as en_iothub_states
 dim iothub_interface as pl_sock_interfaces
 dim iothub_rid as dword=0
@@ -41,7 +41,6 @@ declare mqtt_sock_num as byte
 declare function iothub_init() as ok_ng
 declare sub iothub_debugprint(byref print_data as string)
 declare function iothub_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
-declare sub iothub_dps_device_lookup()
 declare sub iothub_dps_device_provisioning()
 declare sub iothub_dps_connect(byref target_ip as string)
 declare sub iothub_http_reset()
@@ -422,182 +421,13 @@ end sub
 
 public sub iothub_proc_timer()
 
-'	dim b as byte
-	
-'	b=sock.num
-'	sock.num=iothub_dps_sock
+	select case iothub_state
+	case EN_IOTHUB_NOT_CONNECTED:
+		iothub_device_lookup()			
+	case EN_IOTHUB_PROVISIONING:
+		iothub_dps_device_provisioning()
+	end select				
 
-'	select case iothub_state
-'	case EN_IOTHUB_REGISTERED:
-'		sock_release(iothub_dps_sock)
-	
-'		dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+API_VERSION		
-'		dim resourceUri as string= iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id
-'		dns_start(sock_get("DNS"))
-'		iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+ generateSasToken(resourceUri, iothub_primary_key, 525600)
-'		mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
-'		iothub_state=EN_IOTHUB_CONNECTING
-		
-'	case EN_IOTHUB_IP_OBTAINED:
-'		if iothub_assigned_hub="" then
-'			if dns_connect(iothub_interface,"",0) = EN_STATUS_DNS_OK then
-'				dns_query(iothub_dps_server)	
-'			end if
-'			iothub_state=EN_IOTHUB_DPS_CONNECTING
-'		else
-
-'			iothub_state=EN_IOTHUB_CONNECTED
-'		end if
-'		iothub_timer=40
-
-'	case EN_IOTHUB_CONNECTING,EN_IOTHUB_DISCONNECTED, EN_IOTHUB_CONNECTED:
-	
-'		mqtt_proc_timer()
-'	end select
-	
-'	if iothub_timer>0 then
-'		iothub_timer=iothub_timer-1
-'		if iothub_timer=0 then
-			select case iothub_state
-'			case EN_IOTHUB_IDLE:
-				
-'			case EN_IOTHUB_DPS_CONNECTING:
-'				callback_iothub_dps_failed()
-'				if iothub_assigned_hub="" then
-'					dns_stop()
-'					dns_start(sock_get("DNS"))
-'					iothub_state=EN_IOTHUB_IP_OBTAINED
-'				end if
-			case EN_IOTHUB_NOT_CONNECTED:
-				iothub_device_lookup()			
-			case EN_IOTHUB_PROVISIONING:
-'				if sock.state=PL_SST_EST_TLS then
-'					iothub_dps_device_provisioning()
-'				else
-'					iothub_dps_connect("")
-'					iothub_state=EN_IOTHUB_DPS_CONNECTING
-'				end if
-				iothub_dps_device_provisioning()
-
-			end select			
-'		end if
-'	end if
-'	sock.num=b
-	
-end sub
-
-'public sub iothub_proc_sock_event()
-'	if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
-'		#if IOTHUB_DEBUG_PRINT
-'			iothub_debugprint("ERROR: iothub_init() wasn't used or failed")
-'		#endif
-'		exit sub
-'	end if
-
-'	select case iothub_state
-		
-'		case EN_IOTHUB_IDLE, EN_IOTHUB_DPS_CONNECTING, EN_IOTHUB_DEVICE_LOOKUP, EN_IOTHUB_PROVISIONING:
-'		if sock.num=iothub_dps_sock then
-'			select case sock.state
-'			case PL_SST_CLOSED, PL_SST_CL_PCLOSED,PL_SST_CL_PRESET_EST:
-'				sys.debugprint("dps disconnected\x0a")
-'				dim resourceUri as string=iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id
-'				iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
-
-'				callback_iothub_dps_failed()
-'				iothub_timer=5
-				
-'			case PL_SST_EST_AOPENED:
-'				sock.tlshandshake(iothub_dps_server)
-				
-'			case PL_SST_EST_TLS:
-'				iothub_timer=5
-'				select case iothub_state
-'				case EN_IOTHUB_DPS_CONNECTING:
-'					iothub_state=EN_IOTHUB_DEVICE_LOOKUP
-					
-'				case EN_IOTHUB_DEVICE_LOOKUP:
-'					iothub_state=EN_IOTHUB_PROVISIONING
-					
-'				end select				
-'			end select
-'		end if
-'	end select		
-
-'end sub
-
-public sub iothub_proc_data()
-'	dim s as string
-'	dim pos1, pos2 as byte
-	
-'	if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
-'		#if IOTHUB_DEBUG_PRINT
-'			iothub_debugprint("ERROR: iothub_init() wasn't used or failed")
-'		#endif
-'		exit sub
-'	end if
-
-'	select case iothub_state
-'	case EN_IOTHUB_IDLE:	
-'	case EN_IOTHUB_DPS_CONNECTING:
-'	case EN_IOTHUB_DEVICE_LOOKUP:
-'		if sock.num<>iothub_dps_sock then
-'			exit sub
-'		end if
-'		if iothub_state=EN_IOTHUB_DEVICE_LOOKUP then
-'			s=sock.tlsgetdata(255)
-'			pos1=instr(1,s,"\x0d\x0aDate: ",1)
-'			if pos1>0 then
-'				pos2=instr(pos1+3,s,"\x0d\x0a",1)
-'				if pos2>0 then
-'					s=mid(s,pos1+8,pos2-pos1-8)
-'					callback_iothub_set_datetime(s)
-'				end if
-'			end if
-'			do
-'				s=right(s,64)+sock.tlsgetdata(191)
-'				pos1=instr(1,s,"assignedHub",1)
-'				if pos1>0 then
-'					pos2=instr(pos1,s,",",1)
-'					if pos2>0 then
-'						sock.rxclear()
-'						s=mid(s,pos1+14,pos2-pos1-15)
-'						callback_iothub_device_assigned(s)
-'						iothub_assigned_hub=s
-'						iothub_state=EN_IOTHUB_REGISTERED
-'						pos1=0
-'						pos2=0
-'					end if
-'				end if
-'			loop while pos1>0 or pos2>0 and sock.tlsrxlen>0
-			
-'			do 
-'				s=sock.tlsgetdata(255)
-'			loop while sock.tlsrxlen>0
-'		end if			
-'	case EN_IOTHUB_PROVISIONING:
-'		if sock.num<>iothub_dps_sock then
-'			exit sub
-'		end if
-'		s=sock.tlsgetdata(255)
-'		do	
-'			pos1=instr(1,s,"\x22status\x22:\x22assigning\x22",1)
-'			if pos1>0 then
-'				pos2=instr(pos1,s,",",1)
-'				if pos2>0 then
-'					iothub_timer=10
-'					sock.rxclear()
-'					pos1=0
-'					pos2=0
-'				end if
-'			end if
-'			s=right(s,64)+sock.tlsgetdata(191)
-'		loop while pos1>0 or pos2>0 and sock.tlsrxlen>0	
-'	case else
-'		mqtt_proc_data()
-		
-'	end select
-		
 end sub
 
 function iothub_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
@@ -688,29 +518,8 @@ public sub iothub_dps_connect(byref target_ip as string)
 	
 end sub
 
-sub iothub_dps_device_lookup()
-	dim content as string = "{registrationId: \x22"+iothub_device_id+"\x22}"
-	
-	sock.num=iothub_dps_sock
-	if sock.state<>PL_SST_EST_TLS then
-		exit sub
-	end if
-	sys.debugprint("DPS device lookup\x0d\x0a")
-	
-	sock.tlssetdata("POST /"+iothub_scope_id+"/registrations/"+iothub_device_id+"?api-version=2019-03-31 HTTP/1.1\x0d\x0a")
-	sock.tlssetdata("Host: "+iothub_dps_server+"\x0d\x0a")
-	sock.tlssetdata("Content-Length: "+str(len(content))+"\x0d\x0a")
-
-	sock.tlssetdata("Content-Type: application/json\x0d\x0a")
-	sock.tlssetdata("Authorization: SharedAccessSignature sr="+iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id+"&sig=")
-	sock.tlssetdata(iothub_dps_authorization)
-	sock.tlssetdata("\x0d\x0a\x0d\x0a")
-	sock.tlssetdata(content+"\x0d\x0a")
-	sock.send()
-
-end sub
-
 sub iothub_device_lookup()
+
 	if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
 		exit sub
 	end if
@@ -718,6 +527,7 @@ sub iothub_device_lookup()
 	iothub_http_reset()
 	http_request(HTTP_POST, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")
 	iothub_state=EN_IOTHUB_DEVICE_LOOKUP	
+
 end sub
 
 sub iothub_dps_device_provisioning()
@@ -747,9 +557,9 @@ end sub
 sub iothub_mqtt_start()
 	
 	iothub_state=EN_IOTHUB_CONNECTED
-	dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+"/"+IOTHUB_API_VERSION	
-	dim resourceUri as string=iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id
-	iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+ iothub_dps_authorization
+	dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+"/"+IOTHUB_MQTT_API_VERSION	
+	dim resourceUri as string= iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id
+	iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+generateSasToken(resourceUri, iothub_primary_key, 525600)
 	mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
 
 end sub
@@ -843,12 +653,7 @@ sub iot_content_arrival(data as string)
 	if http_request_item.url = iothub_current_url then
 		iothub_parse_http(data)
 	end if
-'	dim s as string = get_JSON_value(data, "assignedHub")
-'	if s<>"" then
-'		callback_iothub_device_assigned(s)
-'		iothub_state=EN_IOTHUB_PROVISIONING
-'	end if
-	
+
 end sub
 
 sub iothub_http_reset()
@@ -863,6 +668,3 @@ end sub
 		sys.debugprint("IOTHUB> "+print_data+"\x0d\x0a")
 	end sub
 #endif	
-
-
-

@@ -24,12 +24,7 @@ sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return
 
     http_dns_answer_acquired(return_type, return_string)
     mqtt_dns_answer_acquired(return_type, return_string)
-
-'	if iothub_state=EN_IOTHUB_DPS_CONNECTING then
-'		iothub_dns_answer_acquired(return_type,return_string)
-'	else
-'		mqtt_dns_answer_acquired(return_type,return_string)
-'	end if		
+	
 end sub 
 
 sub callback_dns_ok()
@@ -354,15 +349,6 @@ sub callback_http_content_arrival(data as string)
 	
 end sub
 
-
-sub callback_http_post_data_sent_ok()
-end sub
-
-
-sub callback_http_send_post_data(remaining_content_length as dword)
-end sub
-
-
 sub callback_http_send_headers()
     
 	iot_send_headers()
@@ -376,11 +362,6 @@ sub callback_http_request_complete()
 	
 end sub
 
-
-sub callback_http_response_code_arrival(http_response as string)
-end sub 
-
-
 function callback_http_open_romfile() as dword
     
 	dim url as string = iothub_get_url()
@@ -392,3 +373,11 @@ function callback_http_open_romfile() as dword
             
 end function
 
+sub callback_http_post_data_sent_ok()
+end sub
+
+sub callback_http_send_post_data(remaining_content_length as dword)
+end sub
+
+sub callback_http_response_code_arrival(http_response as string)
+end sub 
