@@ -231,7 +231,7 @@ public sub iothub_on_disconnected()
 	#if IOTHUB_DEBUG_PRINT
 		iothub_debugprint("Disconnected from server.")
 	#endif
-	iothub_state=EN_IOTHUB_DISCONNECTED
+	iothub_state=EN_IOTHUB_NOT_CONNECTED
 end sub
 
 public sub iothub_proc_mqtt_msg(byref topic as string,byref data as string)
