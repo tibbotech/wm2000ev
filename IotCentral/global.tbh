@@ -43,8 +43,8 @@ include "libraries\http.tbh"
 
 'DECLARATIONS--------------------------------------------------------
 declare sub boot()
-declare function generateSasToken(byref resourceUri as string, byref signingKey as string, expiresInMins as word) as string
-
+declare sub base64_encode(byref input_str as string, input_len as byte, byref result as string)
+declare sub base64_decode(byref input as string, byref result as string)
 declare TBT00_3_S1_CHANNEL_NUM as byte
 declare led_pattern_index as byte
 declare led_pattern as string

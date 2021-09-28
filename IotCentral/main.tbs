@@ -26,6 +26,7 @@ sub on_sys_timer()
 
 end sub
 
+
 sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
 	mqtt_sock_event(sock.state, sock.statesimple)
     http_sock_state_update(newstatesimple)
@@ -33,7 +34,11 @@ sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock
 end sub
 
 sub on_button_pressed()
-
+	dim b as byte
+	for b=0 to 12
+		sock.num=b
+		sock.close
+	next b
 end sub
 
 sub on_wln_event(wln_event as enum pl_wln_events)

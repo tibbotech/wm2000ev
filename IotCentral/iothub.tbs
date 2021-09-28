@@ -41,6 +41,7 @@ declare mqtt_sock_num as byte
 declare function iothub_init() as ok_ng
 declare sub iothub_debugprint(byref print_data as string)
 declare function iothub_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
+declare function iothub_generate_sas_token(byref resourceUri as string, byref signingKey as string, expiresInMins as word) as string
 declare sub iothub_dps_device_provisioning()
 declare sub iothub_dps_connect(byref target_ip as string)
 declare sub iothub_http_reset()
@@ -175,7 +176,7 @@ function iothub_init() as ok_ng
 end function
 
 public sub iothub_start(byref device_id as string, byref scope_id as string, byref dps_url as string, byref symmetricKey as string, interface as pl_sock_interfaces)
-	dim resourceUri as string=scope_id+"%2Fregistrations%2F"+device_id
+
 
 	if device_id="" or scope_id="" or dps_url="" or symmetricKey="" then
 		#if IOTHUB_DEBUG_PRINT
@@ -187,11 +188,10 @@ public sub iothub_start(byref device_id as string, byref scope_id as string, byr
 	iothub_device_id=device_id
 	iothub_scope_id=scope_id
 	iothub_dps_server=dps_url
-	iothub_primary_key =symmetricKey
 	iothub_interface=interface
+	iothub_primary_key=symmetricKey
 	server_bound_message_topic="devices/"+iothub_device_id+"/messages/events/"
 	device_bound_message_topic="devices/"+iothub_device_id+"/messages/devicebound/"
-	iothub_dps_authorization=generateSasToken(resourceUri, iothub_primary_key, 525600)
 	iothub_state=EN_IOTHUB_NOT_CONNECTED
 	
 end sub
@@ -534,6 +534,7 @@ sub iothub_dps_device_provisioning()
  
 	if iothub_state<>EN_IOTHUB_PROVISIONING then
 		iothub_state=EN_IOTHUB_PROVISIONING
+		iothub_dps_authorization=iothub_generate_sas_token(iothub_scope_id+"%2Fregistrations%2F"+iothub_device_id, iothub_primary_key, 525600)
 		iothub_current_url = "https://" + iothub_dps_server + "/" + iothub_scope_id+"/registrations/"+iothub_device_id+"/register"+IOTHUB_API_VERSION
 		iothub_http_reset()
 		http_request(HTTP_PUT, iothub_current_url, PL_SOCK_INTERFACE_WLN,"{registrationId: \x22"+iothub_device_id+"\x22}")	
@@ -562,7 +563,7 @@ sub iothub_mqtt_start()
 	iothub_state=EN_IOTHUB_CONNECTED
 	dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+"/"+IOTHUB_MQTT_API_VERSION	
 	dim resourceUri as string= iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id
-	iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+generateSasToken(resourceUri, iothub_primary_key, 525600)
+	iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+iothub_generate_sas_token(resourceUri, iothub_primary_key, 525600)
 	mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
 
 end sub
@@ -666,6 +667,57 @@ sub iothub_http_reset()
 	iothub_current_json_value = ""
 	iothub_assigned_status = false
 end sub
+
+function iothub_generate_sas_token(byref resourceUri as string, byref signingKey as string, expiresInMins as word) as string
+	dim key as string="key"
+	dim message as string
+	dim result as string=strgen(255,"A")
+	dim ch as string(1)
+	dim s as string
+	dim daycounts,mincounts as word
+	dim seconds as byte
+	dim expires as dword
+	dim i as byte
+	
+	rtc.getdata(daycounts,mincounts,seconds) 'rtc.getdata returns the elapse time since 2000, we need the elapse time since 1970
+
+	expires=daycounts*24*60+mincounts+16302369+expiresInMins
+	expires=expires*60+seconds
+	
+	message=resourceUri+"\x0A"+lstr(expires)
+	base64_decode(signingKey,key)
+	sock.tlsinit(0)
+	hmac256(key,message,result)
+	sock.tlsdeinit()
+	
+
+	for i=0 to len(result)/2-1
+		ch=chr(val("&h"+mid(result,i*2+1,2)))
+		s=s+ch
+	next i
+	base64_encode(s,len(s),result)
+	
+	iothub_generate_sas_token=""
+	for i=1 to len(result)
+		ch=mid(result,i,1)
+		if ch="/" then
+			iothub_generate_sas_token=iothub_generate_sas_token+"%2F"
+		else
+			if ch="=" then
+				iothub_generate_sas_token=iothub_generate_sas_token+"%3D"
+			else
+				if ch="+" then
+					iothub_generate_sas_token=iothub_generate_sas_token+"%2B"
+				else
+					iothub_generate_sas_token=iothub_generate_sas_token+ch
+				end if
+			end if
+		end if
+	next i
+	iothub_generate_sas_token=iothub_generate_sas_token+"&se="+lstr(expires)
+
+end function
+
 
 #if IOTHUB_DEBUG_PRINT
 	sub iothub_debugprint(byref print_data as string)
