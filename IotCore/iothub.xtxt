@@ -1,0 +1,13 @@
+>>temperature				T
+>>light						T
+>>name						P,W,NAME
+>>sampleTime				P,R,EPT
+>>LedTest					C		{Pattern}
+
+#define IOTCORE_DEBUG_PRINT 1
+#define IOTCORE_ITEM_NAME_LEN 16
+#define IOTCORE_ITEM_VALUE_LEN 32
+#define IOTCORE_TELEMETRY_NUM 2
+#define IOTCORE_PROPERTY_NUM 2
+#define IOTCORE_COMMAND_NUM 1
+	

@@ -1,0 +1,11 @@
+I=GEN;D=General;T=GROUP;
+I=SSID;T=STRING;D=SSID;C=EDIT;xIndex=1;
+I=KEY;T=STRING;D=WiFi password;C=EDIT;xIndex=2;
+I=PJID;T=STRING;D=Project ID;C=EDIT;V=none;S=none;xIndex=3;
+I=SCID;T=STRING;D=Registry ID;C=EDIT;xIndex=4;
+I=DVID;T=STRING;D=Device ID;C=EDIT;xIndex=5;
+I=LCID;T=STRING;D=Location ID;C=STATIC;V=none;S=none;O=us-central1/us-central1/europe-west1/europe-west1/asia-east1/asia-east1;xIndex=6;
+I=PKEY;T=STRING;D=Private key;C=EDIT;xIndex=7;
+I=EPT;T=WORD;D=Event posting time (minute);C=EDIT;xIndex=8;
+I=NAME;T=STRING;D=Device Name;C=EDIT;xIndex=9;
+@@STG_RefPath=settings.xtxt

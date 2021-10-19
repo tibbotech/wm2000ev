@@ -1,0 +1,16 @@
+>>SSID	E	S	1	0	63	A	^	SSID
+>>KEY	E	S	1	0	63	A	^	Wifi password
+>>NAME	E	S	1	0	63	A	IotCore	Device Name
+>>SCID	E	S	1	0	32	A	^	Registry ID
+>>DVID	E	S	1	0	32	A	^	Device ID
+>>PKEY	E	S	1	0	243	A	^	Private Key
+>>EPT	E	W	1	1	65535	A	1	Event posting time(min)
+>>PJID	E	S	1	0	32	A	^	Project ID
+>>LCID	E	S	1	0	32	A	us-central1	Location ID
+#define STG_DESCRIPTOR_FILE "settings.xtxt"
+#define STG_DEBUG_PRINT 1
+#define STG_TIMESTAMP 1
+#define STG_MAX_NUM_SETTINGS 9
+#define STG_RAM_ARRAY_SIZE 0
+#define STG_MAX_SETTING_NAME_LEN 4
+#define STG_MAX_SETTING_VALUE_LEN 243

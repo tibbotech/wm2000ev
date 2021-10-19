@@ -1,0 +1,144 @@
+include "global.tbh"
+declare sub init_rgb_led_io()
+
+sub boot()
+
+'	callback_iotcore_set_datetime("Tue, 19 Oct 2021 06:11:01 GMT")
+
+	init_rgb_led_io()
+	
+    if tbt28_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)=NG then
+        sys.debugprint("SSI channel could not be allocated, using bit banging instead."+chr(10)+chr(13))
+    end if
+	select case tbt29_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)
+    case TBT29_WRONG_MFGID:
+        sys.debugprint("DEFAULT_MFGID_INCORRECT"+chr(10)+chr(13))
+        sys.halt
+    case TBT29_WRONG_DEVID_REVISION:
+        sys.debugprint("TBT29_WRONG_DEVID_REVISION"+chr(10)+chr(13))
+        sys.halt
+    case TBT29_NO_SSI_AVAILABLE:
+        sys.debugprint("SSI channel could not be allocated, using bit banging instead."+chr(10)+chr(13))
+    end select
+
+    if wln.enabled=NO then
+        wln.boot(0)
+    end if
+    
+    'Bluetooth setup
+    '================================================================
+    bt.name=BT_NAME
+    bt.emulation=PL_WLN_BT_EMULATION_MODE_MICROCHIP
+    bt.txbuffrq(1)
+    bt.rxbuffrq(1)
+    sys.buffalloc()
+    bt.enable
+    while bt.enabled=NO
+    wend
+    bt.advertise=YES 'allow the device to be discoverable
+
+    'Setting Library Initialization
+    '================================================================
+    dim stg_init_code as en_stg_status_codes
+    dim stg_name as string(STG_MAX_SETTING_NAME_LEN)
+	
+    if stg_start()<>EN_STG_STATUS_OK then 
+        pat.play("R-R-~",PL_PAT_CANINT)
+        sys.halt
+    end if
+	
+    stg_init_code=stg_check_all(stg_name)
+    select case stg_init_code
+	
+    case EN_STG_STATUS_OK:
+    '--- all good ---
+    case EN_STG_STATUS_INVALID, EN_STG_STATUS_FAILURE:
+        if stg_restore_multiple(EN_STG_INIT_MODE_NORMAL)<>EN_STG_STATUS_OK then 
+            pat.play("R-R-~",PL_PAT_CANINT)
+            sys.halt
+        end if
+    case else:
+        'some other trouble
+        pat.play("R-R-~",PL_PAT_CANINT)
+        sys.halt
+    end select
+    '-----------------------------------------------------------------
+
+    'WM2000 Wi-Fi setup
+    '================================================================
+	
+	dim ssid as string=stg_get("SSID",0)
+	dim pwd as string=stg_get("KEY",0)
+
+	if ssid<>"" and ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd then
+		wln.autoconnect=YES
+		wln.autoconnectssid=ssid
+		wln.autoconnectpassword=pwd	
+		wln.autodhcp=YES
+		wln.autoconnect=YES
+		sys.reboot
+	end if	
+    luis_start(BT_NAME)
+    'Tables setup
+    '================================================================	
+    if fd.mount<>PL_FD_STATUS_OK or fd.numservicesectors<100 then
+		if fd.formatj(fd.availableflashspace,32,100)<>PL_FD_STATUS_OK then
+			sys.halt
+		end if
+
+		if fd.mount<>PL_FD_STATUS_OK then
+			sys.halt
+		end if
+	end if
+	
+	fd.filenum=0
+	if  fd.open(FD_INIT_FILE)<>PL_FD_STATUS_OK then
+		if fd.create(FD_INIT_FILE) <> PL_FD_STATUS_OK then 
+			sys.halt
+		end if
+		fd.open(FD_INIT_FILE)
+		fd.setdata(sys.serialnum)
+		fd.close()
+ 	end if
+
+	if fd.open(FD_INIT_FILE)<>PL_FD_STATUS_OK then
+		sys.halt
+	end if
+	
+	if fd.getdata(128) <> sys.serialnum then 
+		sys.halt
+	end if
+	
+	fd.close()
+	
+    if tbl_start()<>EN_TBL_STATUS_OK then
+        sys.halt
+    end if
+	
+    pat.play("B-B-B-",PL_PAT_CANINT)
+	
+	dim device_id as string =stg_get("DVID",0)
+	dim registry_id as string=stg_get("SCID",0)
+	dim location_id as string=stg_get("LCID",0)
+	dim project_id as string=stg_get("PJID",0)
+	dim private_key as string="-----BEGIN EC PRIVATE KEY-----\x0aMHcCAQEEILp7Ap9sETINHoOlHbagEzsIeFNSuJbQewOg/2USqfT2oAoGCCqGSM49\x0aAwEHoUQDQgAEtNwgzC44m9TrXsFwv6fgEU909IwDPT4GWTE87YETNxbm0LX8pW7t\x0aTZWHkFNAPqDv388k+nQ17GxwUYU0/Ys02A==\x0a-----END EC PRIVATE KEY-----"
+	iotcore_start(device_id, registry_id, location_id, project_id, private_key, PL_SOCK_INTERFACE_WLN)
+	led_pattern="R-G-B-R-G-B-R-G-B-"
+end sub
+
+sub init_rgb_led_io()
+
+	pwm.num =  PL_PWM_NUM_3
+    pwm.enabled = YES
+    pwm.dutycycle = 0
+    pwm.frequency = 1000	 	
+	pwm.num =  PL_PWM_NUM_5
+    pwm.enabled = YES
+    pwm.dutycycle = 0
+    pwm.frequency = 1000	
+	pwm.num =  PL_PWM_NUM_6
+    pwm.enabled = YES
+    pwm.dutycycle = 0
+    pwm.frequency = 1000 
+	
+end sub 

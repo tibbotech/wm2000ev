@@ -1,0 +1,527 @@
+include "global.tbh"
+
+const IOTCORE_INIT_SIGNATURE=&h1FD3
+
+dim iotcore_telemetry(IOTCORE_TELEMETRY_NUM) as struct_iotcore_telemetry
+dim iotcore_property(IOTCORE_PROPERTY_NUM) as struct_iotcore_property
+dim iotcore_command(IOTCORE_COMMAND_NUM) as struct_iotcore_command
+
+dim iotcore_connected as no_yes
+dim iotcore_interface as pl_sock_interfaces
+dim iotcore_rid as dword=0
+dim iotcore_sending_telemetry as no_yes = NO
+dim device_bound_message_topic as string(64)
+dim iotcore_init_flag as word
+dim num_of_suback as byte
+dim iotcore_device_id as string(32)
+dim iotcore_json_web_token as string
+dim iotcore_client as string
+dim iotcore_timer as byte=0
+dim iotcore_command_topic as string(64)
+dim iotcore_config_topic as string(64)
+dim iotcore_state_topic as string(64)
+dim iotcore_event_topic as string(64)
+
+declare mqtt_sock_num as byte
+declare function iotcore_init() as ok_ng
+declare sub iotcore_debugprint(byref print_data as string)
+declare function iotcore_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
+declare sub iotcore_check_n_send_state()
+
+function iotcore_init() as ok_ng
+	const END_OF_LINE="\x0d"
+	dim i as word
+	dim s as string
+	dim name as string(IOTCORE_ITEM_NAME_LEN)
+	dim telemtry_index as byte=0
+	dim property_index as byte=0
+	dim command_index as byte=0
+	dim item_type as string(1)
+	dim field_start_pos, line_end as word
+	dim pos as byte
+	
+	iotcore_init=NG
+	romfile.open(IOTCORE_DESCRIPTOR_FILE)
+	if romfile.size=0 then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: '"+IOTCORE_DESCRIPTOR_FILE+"' is not in your project or file is empty.")
+		#endif
+		exit function
+	end if
+
+	i=romfile.find(romfile.pointer,">>",1)
+	while i<>0
+		'we are now at the ">>" pointing at the beginning of one setting descriptor line
+		romfile.pointer=i+2
+		
+		'find the end of this setting descriptor line (or the end of file)
+		line_end=romfile.find(romfile.pointer,END_OF_LINE,1)
+		if line_end=0 then
+			line_end=romfile.size+1
+		end if
+		
+		'extract item name
+		name=iotcore_get_descriptor_field(line_end,field_start_pos)			
+		if name="" then
+			'missing item name field
+			#if IOTCORE_DEBUG_PRINT
+				iotcore_debugprint("ERROR: missing name field.")
+			#endif
+			
+			exit function
+		end if
+		
+		if len(name)>IOTCORE_ITEM_NAME_LEN then
+			#if IOTCORE_DEBUG_PRINT
+				iotcore_debugprint("ERROR: item name length is "+str(len(s))+", while you have 'IOTCORE_ITEM_NAME_LEN "+str(IOTCORE_ITEM_NAME_LEN)+"'.")
+			#endif
+			exit function
+		end if
+		
+		s=iotcore_get_descriptor_field(line_end,field_start_pos)
+		item_type=left(s,1)
+		select case item_type
+		case "T":
+			if telemtry_index<IOTCORE_TELEMETRY_NUM then
+				iotcore_telemetry(telemtry_index).name=name			
+			else
+				#if IOTCORE_DEBUG_PRINT
+					iotcore_debugprint("ERROR: telemtry exceed pre-defined number.")
+				#endif
+				exit function
+			end if
+		case "P":
+			if property_index<IOTCORE_PROPERTY_NUM then
+				iotcore_property(property_index).name=name
+			else
+				#if IOTCORE_DEBUG_PRINT
+					iotcore_debugprint("ERROR: property exceed pre-defined number.")
+				#endif
+				exit function
+			end if
+			
+		case "C":
+			if command_index<IOTCORE_COMMAND_NUM then
+				iotcore_command(command_index).name=name
+				
+			else
+				#if IOTCORE_DEBUG_PRINT
+					iotcore_debugprint("ERROR: command exceed pre-defined number.")
+				#endif
+				exit function
+			end if
+			
+		case else
+			
+			#if IOTCORE_DEBUG_PRINT
+				iotcore_debugprint("ERROR: unknow item type.")
+			#endif
+			exit function		
+		end select
+
+		select case item_type
+		case "T":
+			iotcore_telemetry(telemtry_index).value=""
+			telemtry_index=telemtry_index+1				
+		case "P":
+			pos=instr(1,s,",",2)
+			if pos>0 then
+				if mid(s,3,1)="W" then
+					iotcore_property(property_index).writable=YES
+				else
+					iotcore_property(property_index).writable=NO
+				end if
+				s=right(s,len(s)-pos)
+			end if
+				
+			if stg_find(s)>0 then
+				iotcore_property(property_index).stg_name=s
+				property_index=property_index+1
+			else
+				#if IOTCORE_DEBUG_PRINT
+					iotcore_debugprint("ERROR: unknow setting "+s)
+				#endif
+				exit function			
+			end if
+			
+		case "C":
+			s=iotcore_get_descriptor_field(line_end,field_start_pos)	
+			iotcore_command(command_index).addr=field_start_pos
+			command_index=command_index+1
+		case else:	
+		end select
+		i=romfile.find(romfile.pointer,">>",1)
+	wend
+	
+	dns_start(sock_get("DNS"))
+	iotcore_rid=0
+	iotcore_init_flag=IOTCORE_INIT_SIGNATURE
+	iotcore_init=OK	
+end function
+
+public sub iotcore_start(byref device_id as string, byref registry_id as string, byref location_id as string, byref project_id as string, byref private_key as string, interface as pl_sock_interfaces)
+	if device_id="" or registry_id="" or location_id="" or project_id="" or private_key="" then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_start() invalid parameters")
+		#endif
+		exit sub
+	end if
+	iotcore_init()
+	iotcore_device_id=device_id
+
+	iotcore_client="projects/"+project_id+"/locations/"+location_id+"/registries/"+registry_id+"/devices/"+device_id
+	iotcore_json_web_token=device_jwt_generator(project_id,private_key,1000)
+	iotcore_interface=interface
+	iotcore_command_topic="/devices/"+iotcore_device_id+"/commands"
+	iotcore_config_topic="/devices/"+iotcore_device_id+"/config"
+	iotcore_state_topic="/devices/"+iotcore_device_id+"/state"
+	iotcore_event_topic="/devices/"+iotcore_device_id+"/events"
+
+	iotcore_connected=NO	
+end sub
+
+public sub iotcore_on_connected()
+
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+	
+	mqtt_sub(iotcore_command_topic+"/#",QOS_AT_MOST_ONCE)
+	mqtt_sub(iotcore_config_topic,QOS_AT_MOST_ONCE)
+	#if IOTCORE_DEBUG_PRINT
+		iotcore_debugprint("Server connected.")
+	#endif
+	iotcore_connected=YES
+end sub
+
+public sub iotcore_on_disconnected()
+	
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+	dns_stop()
+	dns_start(sock_get("DNS"))
+	mqtt_connect()
+	#if IOTCORE_DEBUG_PRINT
+		iotcore_debugprint("Disconnected from server.")
+	#endif
+	iotcore_connected=NO
+end sub
+
+public sub iotcore_proc_mqtt_msg(byref topic as string,byref data as string)
+	dim topic_len as byte=len(iotcore_command_topic)
+	dim pos1, pos2, pos3 as byte=0
+	dim item_name as string
+	dim value as string
+	dim s as string
+	dim rid as string
+	dim i as byte
+	dim c as byte=0
+	
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+	
+	if instr(1,topic,iotcore_command_topic,1)>0 then
+		pos1=instr(topic_len+1,topic,"/",1)
+		item_name=mid(topic,pos1+1,len(topic)-pos1+1 )
+		#if IOTCORE_COMMAND_NUM>0
+		for i=0 to IOTCORE_COMMAND_NUM-1
+			if iotcore_command(i).name=item_name then
+				pos1=instr(topic_len+1,topic,"$rid=",1)
+				rid=right(topic, len(topic)-pos1-4)
+				iotcore_command(i).rid=lval(rid)
+				if iotcore_command(i).rid > iotcore_rid then
+					iotcore_rid=iotcore_command(i).rid
+				end if
+				callback_iotcore_command_triggered(item_name,data)
+				#if IOTCORE_DEBUG_PRINT
+					iotcore_debugprint("Command: "+item_name+" Data: "+data)
+				#endif				
+				exit sub
+			end if
+		next i
+		#endif
+		exit sub
+	end if
+	
+	#if IOTCORE_PROPERTY_NUM>0
+	if instr(1, topic,iotcore_config_topic,1)>0 then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("Properties update: "+data)
+		#endif		
+		pos1=instr(1,data,"desired",1)
+		do 
+			pos2=instr(pos1,data,"{",1)
+			pos3=instr(pos1,data,"}",1)
+			if pos2>0 and pos2<pos3 then
+				pos1=pos2+1
+				c=c+1
+			else
+				if pos3>0 then
+					c=c-1
+					if c=0 then
+						s=mid(data,pos1,pos3-pos1)
+					end if
+					pos1=pos3+1
+				end if
+			end if
+			if pos2=0 and pos3=0 then
+				c=0
+			end if			
+		loop while c>0
+
+		pos1=1
+		do 
+			pos1=instr(pos1,s,"\x22",1)
+			if pos1=0 then
+				exit do
+			else
+				pos1=pos1+1
+			end if
+			pos2=instr(pos1,s,":",1)
+			if pos2>0 then
+				item_name=mid(s,pos1,pos2-pos1-1)			
+				pos3=instr(pos2,s,",",1)
+				if pos3=0 then
+					pos3=len(s)+1
+				end if
+				value=mid(s,pos2+1,pos3-pos2-1)
+					if left(value,1)="\x22" then
+						value=mid(value,2,len(value)-2)
+					end if
+					for i =0 to IOTCORE_PROPERTY_NUM-1
+						if iotcore_property(i).name=item_name then
+							if value<>stg_get(iotcore_property(i).stg_name,0) then
+								#if IOTCORE_DEBUG_PRINT
+									iotcore_debugprint("Remote value of \x22"+item_name+"\x22"+" change to: "+value)
+								#endif							
+								stg_set(iotcore_property(i).stg_name,0,value)
+							end if
+						end if
+					next i				
+					pos1=pos3+1
+				
+			end if
+		loop while pos2>0		
+	end if
+	#endif
+end sub
+
+public sub iotcore_update_state(byref stg_name as string, byref stg_value as string)
+	dim i as byte
+	
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then 
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+	
+	for i =0 to IOTCORE_PROPERTY_NUM-1
+		if iotcore_property(i).stg_name= stg_name and iotcore_property(i).writable=YES  then
+			iotcore_property(i).updated=YES
+		end if
+	next i		
+end sub
+
+sub iotcore_check_n_send_state()
+	dim i as byte
+	dim s as string
+	dim value as string
+	dim attribute as string(IOTCORE_ITEM_NAME_LEN)
+	dim updated as no_yes=NO
+	
+
+	#if IOTCORE_PROPERTY_NUM>0
+		for i =0 to IOTCORE_PROPERTY_NUM-1
+			if iotcore_property(i).updated=YES then
+				iotcore_property(i).updated=NO
+				updated=YES
+			end if
+		next i
+		if updated=NO then
+			exit sub
+		end if
+		
+		for i =0 to IOTCORE_PROPERTY_NUM-1
+			if iotcore_property(i).writable=YES then
+				attribute=iotcore_property(i).name
+				value=stg_get(iotcore_property(i).stg_name,0)
+				s=iotcore_json_helper(s,attribute,value)
+			end if
+		next i	
+
+		mqtt_publish(iotcore_state_topic,s,QOS_AT_MOST_ONCE)
+	#endif
+
+end sub
+public sub iotcore_update_telemetry(byref name as string, byref value as string)
+	dim i as byte
+	
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+	
+	for i=0 to IOTCORE_TELEMETRY_NUM-1
+		if iotcore_telemetry(i).name=name then
+			iotcore_telemetry(i).value=value
+			iotcore_telemetry(i).updated=YES
+			exit sub
+		end if
+	next i
+end sub
+
+public sub iotcore_send_telemetry(byref timestamp as string)
+	dim i as byte
+	dim s as string
+	dim value as string
+	dim attribute as string(IOTCORE_ITEM_NAME_LEN)
+	dim pos as byte
+	
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+
+	s=""
+	for i=0 to IOTCORE_TELEMETRY_NUM-1
+		if iotcore_telemetry(i).updated=YES then
+			iotcore_telemetry(i).updated=NO
+			attribute=iotcore_telemetry(i).name
+			value=iotcore_telemetry(i).value
+			s=iotcore_json_helper(s,attribute,value)
+		end if
+	next i
+	
+	sock.num=mqtt_sock_num
+	sock.notifysent(0)
+	
+	mqtt_publish(iotcore_event_topic,s,QOS_AT_MOST_ONCE)
+	iotcore_sending_telemetry=YES
+end sub
+
+public sub iotcore_proc_timer()
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		exit sub
+	end if
+	
+	iotcore_check_n_send_state()
+	mqtt_proc_timer()
+end sub
+
+public sub iotcore_proc_sock_event()
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+	mqtt_sock_event(sock.state, sock.statesimple)
+	
+end sub
+
+public sub iotcore_proc_data()
+	dim s as string
+	dim pos1, pos2 as byte
+	
+	if iotcore_init_flag<>IOTCORE_INIT_SIGNATURE then
+		#if IOTCORE_DEBUG_PRINT
+			iotcore_debugprint("ERROR: iotcore_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+
+	mqtt_proc_data()
+	
+end sub
+
+function iotcore_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
+'line_end_pos is an INPUT parameter, field_start_pos RETURNS the field position 
+	const FIELD_SEPARATOR="\x09"
+	dim i as word
+	
+	do
+		if romfile.pointer>=line_end_pos then
+			'the field is missing
+			iotcore_get_descriptor_field=""
+			field_start_pos=0
+			exit function
+		end if
+		
+		i=romfile.find(romfile.pointer,FIELD_SEPARATOR,1)
+		field_start_pos=romfile.pointer
+		if i=0 or i>line_end_pos then
+			'no next field separator found on this line, so we assume the field goes to the end of the line
+			i=line_end_pos
+			dim l as byte=i-romfile.pointer
+			iotcore_get_descriptor_field=romfile.getdata(l)
+			romfile.pointer=line_end_pos+1
+		else
+			dim l as byte=i-romfile.pointer
+			iotcore_get_descriptor_field=romfile.getdata(l)
+			romfile.pointer=i+1
+		end if
+	loop while iotcore_get_descriptor_field="" 		
+end function
+
+public function iotcore_json_helper(byref original as string, byref attribute as string, byref value as string) as string
+	if original="" then
+		original="{}"
+	end if
+	
+	while right(original,1)<>"}"
+		original=left(original,len(original)-1)
+	wend
+		
+	if original="{}" then
+		if left(value,1)="{" and right(value,1)="}" then
+			iotcore_json_helper="{\x22"+attribute+"\x22:"+value+"}"
+		else
+			iotcore_json_helper="{\x22"+attribute+"\x22:\x22"+value+"\x22}"
+		end if
+	else
+		if left(value,1)="{" and right(value,1)="}" then
+			iotcore_json_helper=left(original,len(original)-1)+","+"\x22"+attribute+"\x22:"+value+"}"
+		else
+			iotcore_json_helper=left(original,len(original)-1)+","+"\x22"+attribute+"\x22:\x22"+value+"\x22}"
+		end if
+	end if
+end function
+
+
+public sub iotcore_on_ip_otained()
+	mqtt_start(PL_SOCK_INTERFACE_WLN,"mqtt.2030.ltsapis.goog",8883,"unused",iotcore_json_web_token,iotcore_client,true)
+end sub 
+
+public sub iotcore_on_telemetry_sent()
+	if iotcore_sending_telemetry=NO or sock.num<>mqtt_sock_num then
+		exit sub
+	end if
+	iotcore_sending_telemetry=NO
+	callback_on_telemetry_sent()
+end sub
+
+#if IOTCORE_DEBUG_PRINT
+	sub iotcore_debugprint(byref print_data as string)
+		sys.debugprint("IOTHUB> "+print_data+"\x0d\x0a")
+	end sub
+#endif	
+
+
+
+ 
