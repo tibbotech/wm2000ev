@@ -5,8 +5,8 @@ src_lib_ver=2_01_04
 name=IotCentral
 output=IotCentral.tpc
 debug=on
-defines= /dLCD_TYPE=SOLOMON_SSD1963_FIXED_IO /dSUPPORTS_TLS=1 /dOBJECT_BT=BT_ENABLED /dOBJECT_LCD=LCD_ENABLED /dOBJECT_FD=FD_ENABLED /dOBJECT_KP=KP_ENABLED /dOBJECT_WLN=WLN_ENABLED
-transport=serial
+defines= /dLCD_TYPE=SOLOMON_SSD1963_FIXED_IO /dSUPPORTS_TLS=1 /dOBJECT_LCD=LCD_ENABLED /dOBJECT_BT=BT_ENABLED /dOBJECT_FD=FD_ENABLED /dOBJECT_KP=KP_ENABLED /dOBJECT_WLN=WLN_ENABLED
+transport=udp_winpcap
 [address1]
 platform=TPP2W(G2)
 transport=udp_broadcast
@@ -26,7 +26,7 @@ address=COM13:921600
 [address5]
 platform=WM2000
 transport=udp_winpcap
-address=156.101.249.54.82.61
+address=156.101.249.54.79.48
 [address6]
 platform=WM2000
 transport=udp_broadcast
@@ -301,6 +301,20 @@ location=project
 path=settings.xtxt
 type=xtext
 format=STG_lib_configurator
+condition=
+locked=no
+location=project
+[file40]
+path=libraries\http.tbh
+type=header
+format=
+condition=
+locked=no
+location=project
+[file41]
+path=libraries\http.tbs
+type=basic
+format=
 condition=
 locked=no
 location=project

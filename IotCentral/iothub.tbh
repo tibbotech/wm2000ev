@@ -37,14 +37,10 @@ enum en_iothub_command_codes
 end enum
 
 enum en_iothub_states
-	EN_IOTHUB_IDLE,
-	EN_IOTHUB_DPS_CONNECTING,
+	EN_IOTHUB_NOT_CONNECTED,
 	EN_IOTHUB_DEVICE_LOOKUP,
+	EN_IOTHUB_NOT_PROVISIONED,
 	EN_IOTHUB_PROVISIONING,
-	EN_IOTHUB_REGISTERED,
-	EN_IOTHUB_IP_OBTAINED,
-	EN_IOTHUB_CONNECTING,
-	EN_IOTHUB_DISCONNECTED,
 	EN_IOTHUB_CONNECTED
 end enum
 
@@ -72,11 +68,13 @@ declare sub iothub_proc_timer()
 declare sub iothub_proc_data()
 declare sub iothub_proc_sock_event()
 declare sub iothub_on_connected()
+declare sub iothub_device_lookup()	 
 declare sub iothub_on_disconnected()
 declare sub iothub_proc_mqtt_msg(byref topic as string, byref data as string)
 declare sub iothub_on_ip_otained()
 declare sub iothub_mqtt_sub_ok()
 declare function iothub_json_helper(byref original as string, byref attribute as string, byref value as string) as string
+declare function iothub_get_url() as string
 declare sub iothub_update_telemetry(byref name as string, byref value as string)
 declare sub iothub_send_telemetry(byref timestamp as string)
 declare sub iothub_command_respond(byref command as string, byref returns as string, result as en_iothub_command_codes)
@@ -87,4 +85,9 @@ declare sub callback_iothub_command_triggered(byref command as string, byref par
 declare sub callback_iothub_set_datetime(byref dt_string as string)
 declare sub callback_iothub_device_assigned(byref assigned_hub as string)
 declare sub callback_on_telemetry_sent()
+declare sub iot_send_headers()
+declare sub iot_content_arrival(data as string)
+declare sub iothub_open_romfile()
+declare sub iothub_http_request_complete()
+declare sub iot_header_arrival(header_type as string, header_value as string)
 declare iothub_state as en_iothub_states

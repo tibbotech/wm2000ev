@@ -69,6 +69,17 @@ sub boot()
 	dim ssid as string=stg_get("SSID",0)
 	dim pwd as string=stg_get("KEY",0)
 
+<<<<<<< HEAD
+	if ssid<>"" and ssid<>wln.autoconnectssid or wln.autoconnectpassword<>pwd then
+		wln.autoconnect=YES
+		wln.autoconnectssid=ssid
+		wln.autoconnectpassword=pwd	
+		wln.autodhcp=YES
+		wln.autoconnect=YES
+		sys.reboot
+	end if	
+
+=======
 	if ssid="" then
 '		wln.autoconnect=NO
 	else
@@ -81,6 +92,7 @@ sub boot()
 			sys.reboot
 		end if	
 	end if
+>>>>>>> origin/http-library
 
     luis_start(BT_NAME)
 	

@@ -5,30 +5,40 @@ dim TBT00_3_S1_CHANNEL_NUM as byte
 declare sub device_proc_timer()
 
 sub on_sys_init()
-
     boot()
 end sub
 
 sub on_sock_data_arrival()
 
 	dns_proc_data()
-	iothub_proc_data()
+	mqtt_proc_data()
+    http_proc_data()
+
 end sub
 
 sub on_sys_timer()
 
 	dns_proc_timer()
 	iothub_proc_timer()
+	mqtt_proc_timer()
 	device_proc_timer()
+    http_proc_timer()
+
 end sub
 
-sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
 
-	iothub_proc_sock_event()
+sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
+	mqtt_sock_event(sock.state, sock.statesimple)
+    http_sock_state_update(newstatesimple)
+
 end sub
 
 sub on_button_pressed()
-
+	dim b as byte
+	for b=0 to 12
+		sock.num=b
+		sock.close
+	next b
 end sub
 
 sub on_wln_event(wln_event as enum pl_wln_events)
@@ -46,7 +56,13 @@ sub on_sys_dhcp_ok(renew as enum no_yes, interface as enum pl_sock_interfaces, i
 	wln.gatewayip=gateway_ip
 	wln.netmask=netmask
 	sys.debugprint("IP obtained: "+wln.ip+" gateway: "+wln.gatewayip+" netmask: "+wln.netmask+"\x0d")
-	iothub_on_ip_otained()
+	
+	dim device_primary_key as string=stg_get("PKEY",0)
+	dim scope_id as string=stg_get("SCID",0)
+	dim device_id as string=stg_get("DVID",0)
+	dim dps_server as string=stg_get("DPSS",0)
+	
+	iothub_start(device_id, scope_id, dps_server, device_primary_key, PL_SOCK_INTERFACE_WLN)	
 end sub
 
 sub on_sys_dhcp_failure(interface as enum pl_sock_interfaces)
@@ -58,16 +74,13 @@ sub on_sock_data_sent()
 end sub
 
 sub on_bt_event(bt_event as pl_bt_events)
-
     luis_on_bt_event(bt_event)
 end sub
 
 sub on_bt_data_sent()
-
     luis_on_bt_data_sent()
 end sub
 
 sub on_bt_data_arrival()
-
     luis_on_bt_data_arrival()
 end sub

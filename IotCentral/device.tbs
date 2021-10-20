@@ -22,11 +22,9 @@ end sub
         
 sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
 
-	if iothub_state=EN_IOTHUB_DPS_CONNECTING then
-		iothub_dns_answer_acquired(return_type,return_string)
-	else
-		mqtt_dns_answer_acquired(return_type,return_string)
-	end if		
+    http_dns_answer_acquired(return_type, return_string)
+    mqtt_dns_answer_acquired(return_type, return_string)
+	
 end sub 
 
 sub callback_dns_ok()
@@ -324,3 +322,62 @@ sub callback_iothub_dps_failed()
 	
 	sys.debugprint("dps connection failed\x0d\x0a")
 end sub
+
+
+sub callback_http_reponse_code_arrival(http_response as string)
+end sub
+
+
+sub callback_http_request_failed(error_message as string)
+    
+end sub
+
+
+sub callback_http_header_arrival(header_type as string, header_value as string)
+
+	iot_header_arrival(header_type, header_value)
+
+end sub
+
+
+sub callback_http_headers_complete()
+end sub
+
+sub callback_http_content_arrival(data as string)
+
+	iot_content_arrival(data)
+	
+end sub
+
+sub callback_http_send_headers()
+    
+	iot_send_headers()
+
+end sub
+
+
+sub callback_http_request_complete()
+    
+	iothub_http_request_complete()
+	
+end sub
+
+function callback_http_open_romfile() as dword
+    
+	dim url as string = iothub_get_url()
+	if http_request_item.url = url then
+		callback_http_open_romfile=0
+		romfile.open("azure.cer")
+		callback_http_open_romfile=romfile.offset    
+	end if
+            
+end function
+
+sub callback_http_post_data_sent_ok()
+end sub
+
+sub callback_http_send_post_data(remaining_content_length as dword)
+end sub
+
+sub callback_http_response_code_arrival(http_response as string)
+end sub 

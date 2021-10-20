@@ -421,6 +421,87 @@ end sub
 
 public sub iothub_proc_timer()
 
+<<<<<<< HEAD
+	dim b as byte
+	
+	b=sock.num
+	sock.num=iothub_dps_sock
+
+	select case iothub_state
+	case EN_IOTHUB_REGISTERED:
+		sock_release(iothub_dps_sock)
+	
+		dim user_name as string=iothub_assigned_hub+"/"+iothub_device_id+API_VERSION		
+		dim resourceUri as string= iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id
+		dns_start(sock_get("DNS"))
+		iothub_sas_token="SharedAccessSignature sr="+iothub_assigned_hub+"%2Fdevices%2F"+iothub_device_id+"&sig="+ generateSasToken(resourceUri, iothub_primary_key, 525600)
+		mqtt_start(PL_SOCK_INTERFACE_WLN,iothub_assigned_hub,8883,user_name,iothub_sas_token,iothub_device_id,true)
+		iothub_state=EN_IOTHUB_CONNECTING
+		
+	case EN_IOTHUB_IP_OBTAINED:
+		if iothub_assigned_hub="" then
+			if dns_connect(iothub_interface,"",0) = EN_STATUS_DNS_OK then
+				dns_query(iothub_dps_server)	
+			end if
+			iothub_state=EN_IOTHUB_DPS_CONNECTING
+		else
+
+			iothub_state=EN_IOTHUB_CONNECTED
+		end if
+		iothub_timer=40
+
+	case EN_IOTHUB_CONNECTING,EN_IOTHUB_DISCONNECTED, EN_IOTHUB_CONNECTED:
+	
+		mqtt_proc_timer()
+	end select
+	
+	if iothub_timer>0 then
+		iothub_timer=iothub_timer-1
+		if iothub_timer=0 then
+			select case iothub_state
+			case EN_IOTHUB_IDLE:
+				
+			case EN_IOTHUB_DPS_CONNECTING:
+				callback_iothub_dps_failed()
+				if iothub_assigned_hub="" then
+					dns_stop()
+					dns_start(sock_get("DNS"))
+					iothub_state=EN_IOTHUB_IP_OBTAINED
+				end if
+			case EN_IOTHUB_DEVICE_LOOKUP:
+				if sock.state=PL_SST_EST_TLS then
+					iothub_dps_device_lookup()
+				else
+					iothub_dps_connect("")
+				end if
+				
+				
+			case EN_IOTHUB_PROVISIONING:
+				if sock.state=PL_SST_EST_TLS then
+					iothub_dps_device_provisioning()
+				else
+					iothub_dps_connect("")
+					iothub_state=EN_IOTHUB_DPS_CONNECTING
+				end if
+
+			end select		
+			iothub_timer=10
+		end if
+	end if
+	sock.num=b
+	
+end sub
+
+public sub iothub_proc_sock_event()
+	if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
+		#if IOTHUB_DEBUG_PRINT
+			iothub_debugprint("ERROR: iothub_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+
+=======
+>>>>>>> origin/http-library
 	select case iothub_state
 	case EN_IOTHUB_NOT_CONNECTED:
 		iothub_device_lookup()			
@@ -482,8 +563,8 @@ public function iothub_json_helper(byref original as string, byref attribute as 
 end function
 
 public sub iothub_mqtt_sub_ok()
-	num_of_suback=num_of_suback+1
-	if num_of_suback>4 then
+	iothub_num_of_suback=iothub_num_of_suback+1
+	if iothub_num_of_suback>4 then
 		iothub_rid=iothub_rid+1
 		mqtt_publish(IOTHUB_TOPIC_TWIN+"GET/?$rid="+str(iothub_rid),"{}",QOS_AT_MOST_ONCE)
 	end if
