@@ -20,21 +20,10 @@
 #endif
 
 #ifndef IOTCORE_DESCRIPTOR_FILE
-	#define IOTCORE_DESCRIPTOR_FILE "iothub.xtxt"
-#endif
-
-#ifndef IOTCORE_DPS_TLS_CER
-	#define IOTCORE_DPS_TLS_CER "azure.cer"
+	#define IOTCORE_DESCRIPTOR_FILE "iotcore.xtxt"
 #endif
 
 #define MQTT_NOTIFY_SENT 1
-	
-enum en_iotcore_command_codes
-	EN_IOTCORE_OK=200,
-	EN_IOTCORE_ACCEPTED=202,
-	EN_IOTCORE_BAD_REQUEST=400,
-	EN_IOTCORE_UNAUTHORIZED=401
-end enum
 
 enum en_iotcore_states
 	EN_IOTCORE_STATE_IDLE,

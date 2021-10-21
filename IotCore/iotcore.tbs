@@ -480,7 +480,9 @@ public sub iotcore_proc_data()
 			pos2=instr(pos1+3,s,"\x0d\x0a",1)
 			if pos2>0 then
 				s=mid(s,pos1+8,pos2-pos1-8)
-				sys.debugprint("IOTCORE>"+s+"\x0d\x0a")
+				#if IOTCORE_DEBUG_PRINT
+					iotcore_debugprint(s)
+				#endif
 				callback_iotcore_set_datetime(s)
 				iotcore_state=EN_IOTCORE_STATE_DISCONNECTED
 				iotcore_timer=1
@@ -578,7 +580,7 @@ end sub
 
 #if IOTCORE_DEBUG_PRINT
 	sub iotcore_debugprint(byref print_data as string)
-		sys.debugprint("IOTHUB> "+print_data+"\x0d\x0a")
+		sys.debugprint("IOTCORE> "+print_data+"\x0d\x0a")
 	end sub
 #endif	
 
