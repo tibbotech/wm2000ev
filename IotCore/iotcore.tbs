@@ -1,14 +1,14 @@
 include "global.tbh"
 
 const IOTCORE_INIT_SIGNATURE=&h1FD3
+const IOTCORE_TIME_SOURCE="www.google.com"
 
 dim iotcore_telemetry(IOTCORE_TELEMETRY_NUM) as struct_iotcore_telemetry
 dim iotcore_property(IOTCORE_PROPERTY_NUM) as struct_iotcore_property
 dim iotcore_command(IOTCORE_COMMAND_NUM) as struct_iotcore_command
 
-dim iotcore_connected as no_yes
+dim iotcore_state as en_iotcore_states
 dim iotcore_interface as pl_sock_interfaces
-dim iotcore_rid as dword=0
 dim iotcore_sending_telemetry as no_yes = NO
 dim device_bound_message_topic as string(64)
 dim iotcore_init_flag as word
@@ -16,17 +16,19 @@ dim num_of_suback as byte
 dim iotcore_device_id as string(32)
 dim iotcore_json_web_token as string
 dim iotcore_client as string
-dim iotcore_timer as byte=0
+dim iotcore_timer as byte=60
 dim iotcore_command_topic as string(64)
 dim iotcore_config_topic as string(64)
 dim iotcore_state_topic as string(64)
 dim iotcore_event_topic as string(64)
+dim iotcore_sock as byte
 
 declare mqtt_sock_num as byte
 declare function iotcore_init() as ok_ng
 declare sub iotcore_debugprint(byref print_data as string)
 declare function iotcore_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
 declare sub iotcore_check_n_send_state()
+declare sub iotcore_sync_time()
 
 function iotcore_init() as ok_ng
 	const END_OF_LINE="\x0d"
@@ -152,9 +154,19 @@ function iotcore_init() as ok_ng
 		end select
 		i=romfile.find(romfile.pointer,">>",1)
 	wend
+
+	iotcore_sock=sock_get("IOT")
+	sock.num=iotcore_sock
+	sock.connectiontout=60
+	sock.protocol=PL_SOCK_PROTOCOL_TCP
+	sock.inconmode= PL_SOCK_INCONMODE_ANY_IP_ANY_PORT
+	sock.targetport=80
+	sock.allowedinterfaces = sock.availableinterfaces	
+	sock.txbuffrq(1)
+	sock.rxbuffrq(2)
+	sys.buffalloc()
 	
 	dns_start(sock_get("DNS"))
-	iotcore_rid=0
 	iotcore_init_flag=IOTCORE_INIT_SIGNATURE
 	iotcore_init=OK	
 end function
@@ -176,8 +188,7 @@ public sub iotcore_start(byref device_id as string, byref registry_id as string,
 	iotcore_config_topic="/devices/"+iotcore_device_id+"/config"
 	iotcore_state_topic="/devices/"+iotcore_device_id+"/state"
 	iotcore_event_topic="/devices/"+iotcore_device_id+"/events"
-
-	iotcore_connected=NO	
+	iotcore_state=EN_IOTCORE_STATE_IDLE
 end sub
 
 public sub iotcore_on_connected()
@@ -194,7 +205,7 @@ public sub iotcore_on_connected()
 	#if IOTCORE_DEBUG_PRINT
 		iotcore_debugprint("Server connected.")
 	#endif
-	iotcore_connected=YES
+	iotcore_state=EN_IOTCORE_STATE_CONNECTED
 end sub
 
 public sub iotcore_on_disconnected()
@@ -205,13 +216,10 @@ public sub iotcore_on_disconnected()
 		#endif
 		exit sub
 	end if
-	dns_stop()
-	dns_start(sock_get("DNS"))
-	mqtt_connect()
 	#if IOTCORE_DEBUG_PRINT
 		iotcore_debugprint("Disconnected from server.")
 	#endif
-	iotcore_connected=NO
+	iotcore_state=EN_IOTCORE_STATE_DISCONNECTED
 end sub
 
 public sub iotcore_proc_mqtt_msg(byref topic as string,byref data as string)
@@ -220,7 +228,6 @@ public sub iotcore_proc_mqtt_msg(byref topic as string,byref data as string)
 	dim item_name as string
 	dim value as string
 	dim s as string
-	dim rid as string
 	dim i as byte
 	dim c as byte=0
 	
@@ -237,12 +244,6 @@ public sub iotcore_proc_mqtt_msg(byref topic as string,byref data as string)
 		#if IOTCORE_COMMAND_NUM>0
 		for i=0 to IOTCORE_COMMAND_NUM-1
 			if iotcore_command(i).name=item_name then
-				pos1=instr(topic_len+1,topic,"$rid=",1)
-				rid=right(topic, len(topic)-pos1-4)
-				iotcore_command(i).rid=lval(rid)
-				if iotcore_command(i).rid > iotcore_rid then
-					iotcore_rid=iotcore_command(i).rid
-				end if
 				callback_iotcore_command_triggered(item_name,data)
 				#if IOTCORE_DEBUG_PRINT
 					iotcore_debugprint("Command: "+item_name+" Data: "+data)
@@ -296,20 +297,20 @@ public sub iotcore_proc_mqtt_msg(byref topic as string,byref data as string)
 					pos3=len(s)+1
 				end if
 				value=mid(s,pos2+1,pos3-pos2-1)
-					if left(value,1)="\x22" then
-						value=mid(value,2,len(value)-2)
-					end if
-					for i =0 to IOTCORE_PROPERTY_NUM-1
-						if iotcore_property(i).name=item_name then
-							if value<>stg_get(iotcore_property(i).stg_name,0) then
-								#if IOTCORE_DEBUG_PRINT
-									iotcore_debugprint("Remote value of \x22"+item_name+"\x22"+" change to: "+value)
-								#endif							
-								stg_set(iotcore_property(i).stg_name,0,value)
-							end if
+				if left(value,1)="\x22" then
+					value=mid(value,2,len(value)-2)
+				end if
+				for i =0 to IOTCORE_PROPERTY_NUM-1
+					if iotcore_property(i).name=item_name then
+						if value<>stg_get(iotcore_property(i).stg_name,0) then
+							#if IOTCORE_DEBUG_PRINT
+								iotcore_debugprint("Remote value of \x22"+item_name+"\x22"+" change to: "+value)
+							#endif							
+							stg_set(iotcore_property(i).stg_name,0,value)
 						end if
-					next i				
-					pos1=pos3+1
+					end if
+				next i				
+				pos1=pos3+1
 				
 			end if
 		loop while pos2>0		
@@ -341,7 +342,6 @@ sub iotcore_check_n_send_state()
 	dim attribute as string(IOTCORE_ITEM_NAME_LEN)
 	dim updated as no_yes=NO
 	
-
 	#if IOTCORE_PROPERTY_NUM>0
 		for i =0 to IOTCORE_PROPERTY_NUM-1
 			if iotcore_property(i).updated=YES then
@@ -420,8 +420,23 @@ public sub iotcore_proc_timer()
 		exit sub
 	end if
 	
-	iotcore_check_n_send_state()
-	mqtt_proc_timer()
+	select case iotcore_state
+	case EN_IOTCORE_STATE_IDLE:
+		
+	case EN_IOTCORE_STATE_IP_OBTAINED:
+		
+	case EN_IOTCORE_STATE_TIME_SYNC:
+		
+	case EN_IOTCORE_STATE_DISCONNECTED:
+		if iotcore_timer>0 then
+			iotcore_timer=iotcore_timer-1
+		else
+			iotcore_timer=60
+			mqtt_start(PL_SOCK_INTERFACE_WLN,"mqtt.2030.ltsapis.goog",8883,"unused",iotcore_json_web_token,iotcore_client,true)
+		end if
+	case EN_IOTCORE_STATE_CONNECTED:
+		iotcore_check_n_send_state()
+	end select
 end sub
 
 public sub iotcore_proc_sock_event()
@@ -431,7 +446,19 @@ public sub iotcore_proc_sock_event()
 		#endif
 		exit sub
 	end if
-	mqtt_sock_event(sock.state, sock.statesimple)
+	
+	select case iotcore_state
+		
+	case EN_IOTCORE_STATE_IP_OBTAINED:
+	
+	case EN_IOTCORE_STATE_TIME_SYNC:
+		if sock.num=iotcore_sock and sock.state=PL_SST_EST_AOPENED then 
+			sock.setdata("GET / HTTP/1.1\x0d\x0aHost: www.google.com\x0d\x0a\x0d\x0a")
+			sock.send()
+		end if
+	case EN_IOTCORE_STATE_DISCONNECTED, EN_IOTCORE_STATE_CONNECTED:
+		mqtt_sock_event(sock.state, sock.statesimple)
+	end select
 	
 end sub
 
@@ -445,9 +472,23 @@ public sub iotcore_proc_data()
 		#endif
 		exit sub
 	end if
-
-	mqtt_proc_data()
 	
+	if sock.num=iotcore_sock then
+		s=sock.getdata(255)
+		pos1=instr(1,s,"\x0d\x0aDate: ",1)
+		if pos1>0 then
+			pos2=instr(pos1+3,s,"\x0d\x0a",1)
+			if pos2>0 then
+				s=mid(s,pos1+8,pos2-pos1-8)
+				sys.debugprint("IOTCORE>"+s+"\x0d\x0a")
+				callback_iotcore_set_datetime(s)
+				iotcore_state=EN_IOTCORE_STATE_DISCONNECTED
+				iotcore_timer=1
+				sock.rxclear()
+				sock.close()
+			end if
+		end if	
+	end if
 end sub
 
 function iotcore_get_descriptor_field(line_end_pos as word, byref field_start_pos as word) as string
@@ -503,10 +544,25 @@ public function iotcore_json_helper(byref original as string, byref attribute as
 	end if
 end function
 
-
 public sub iotcore_on_ip_otained()
-	mqtt_start(PL_SOCK_INTERFACE_WLN,"mqtt.2030.ltsapis.goog",8883,"unused",iotcore_json_web_token,iotcore_client,true)
+
+	if dns_connect(iotcore_interface,"",0) = EN_STATUS_DNS_OK then
+		dns_query(IOTCORE_TIME_SOURCE)	
+	end if
+	iotcore_state=EN_IOTCORE_STATE_IP_OBTAINED
+	iotcore_sync_time()
 end sub 
+
+public sub iotcore_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
+	if(return_type=EN_DNS_RET_IP) then
+        if dns_current_domain() = IOTCORE_TIME_SOURCE then
+			iotcore_state=EN_IOTCORE_STATE_TIME_SYNC
+			sock.num=iotcore_sock
+            sock.targetip = ddstr(return_string) 
+			sock.connect()
+        end if
+	end if
+end sub
 
 public sub iotcore_on_telemetry_sent()
 	if iotcore_sending_telemetry=NO or sock.num<>mqtt_sock_num then
@@ -514,6 +570,10 @@ public sub iotcore_on_telemetry_sent()
 	end if
 	iotcore_sending_telemetry=NO
 	callback_on_telemetry_sent()
+end sub
+
+sub iotcore_sync_time()
+	
 end sub
 
 #if IOTCORE_DEBUG_PRINT

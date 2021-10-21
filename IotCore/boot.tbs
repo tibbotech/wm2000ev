@@ -2,11 +2,7 @@ include "global.tbh"
 declare sub init_rgb_led_io()
 
 sub boot()
-
-'	callback_iotcore_set_datetime("Tue, 19 Oct 2021 06:11:01 GMT")
-
 	init_rgb_led_io()
-	
     if tbt28_init("TBT00_3_S1",YES,S1_TBT00_3_S1_CLK,S1_TBT00_3_S1_DATA,TBT00_3_S1_CHANNEL_NUM)=NG then
         sys.debugprint("SSI channel could not be allocated, using bit banging instead."+chr(10)+chr(13))
     end if

@@ -36,6 +36,14 @@ enum en_iotcore_command_codes
 	EN_IOTCORE_UNAUTHORIZED=401
 end enum
 
+enum en_iotcore_states
+	EN_IOTCORE_STATE_IDLE,
+	EN_IOTCORE_STATE_IP_OBTAINED,
+	EN_IOTCORE_STATE_TIME_SYNC,
+	EN_IOTCORE_STATE_DISCONNECTED,
+	EN_IOTCORE_STATE_CONNECTED
+end enum
+
 type struct_iotcore_telemetry
 	name as string(IOTCORE_ITEM_NAME_LEN)
 	value as string(IOTCORE_ITEM_VALUE_LEN)
@@ -52,7 +60,6 @@ end type
 type struct_iotcore_command
 	name as string(IOTCORE_ITEM_NAME_LEN)
 	addr as word
-	rid as dword
 end type
 
 declare sub iotcore_start(byref device_id as string, byref registry_id as string, byref location_id as string, byref project_id as string, byref private_key as string, interface as pl_sock_interfaces)
@@ -68,8 +75,10 @@ declare sub iotcore_update_telemetry(byref name as string, byref value as string
 declare sub iotcore_send_telemetry(byref timestamp as string)
 declare sub iotcore_on_telemetry_sent()
 declare sub iotcore_update_state(byref stg_name as string, byref value as string)
+declare sub iotcore_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
 
 declare sub callback_iotcore_command_triggered(byref command as string, byref params as string)
 declare sub callback_iotcore_set_datetime(byref dt_string as string)
 declare sub callback_on_telemetry_sent()
-declare iotcore_connected as no_yes
+declare iotcore_state as en_iotcore_states
+

@@ -24,8 +24,8 @@ sub callback_dns_failure(status as en_dns_status_codes)
 end sub
         
 sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)
+	iotcore_dns_answer_acquired(return_type,return_string)
 	mqtt_dns_answer_acquired(return_type,return_string)
-	
 end sub 
 
 sub callback_dns_ok()
@@ -121,7 +121,7 @@ end sub
 
 sub emulate_iot_device_telemetry()
 
-	if iotcore_connected<>YES then
+	if iotcore_state<>EN_IOTCORE_STATE_CONNECTED then
 		exit sub
 	end if
 
@@ -272,8 +272,6 @@ sub set_rgb_led(r as byte ,g as byte ,b as byte)
 end sub 
 
 sub callback_iotcore_set_datetime(byref dt_string as string)
-	
-	'Mon, 08 Feb 2021 03:16:19 GMT
 	dim daycounts, mincounts as word
 	dim curr_daycounts, curr_mincounts as word
 	dim syear,smonth,sdate,shour,smin,ssec as string(4)

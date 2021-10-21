@@ -13,18 +13,21 @@ sub on_sock_data_arrival()
 
 	dns_proc_data()
 	iotcore_proc_data()
+	mqtt_proc_data()
 end sub
 
 sub on_sys_timer()
 
 	dns_proc_timer()
 	iotcore_proc_timer()
+	mqtt_proc_timer()
 	device_proc_timer()
 end sub
 
 sub on_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_sock_state_simple)
-
+	
 	iotcore_proc_sock_event()
+
 end sub
 
 sub on_button_pressed()
