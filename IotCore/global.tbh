@@ -4,11 +4,11 @@
 #define LUIS_DEBUG_PRINT 1
 #define WLN_AVAILABLE 1
 #define SIGNAL_STRENGTH_INDICATION 1
-#define MQTT_SSL 1
 '#define MQTT_CER_FILE "gtsltsr.crt"
 #define MQTT_LARGE_PACKETS 1
 #define MQTT_DEBUG_PRINT 1
-
+#define TLS_AVAILABLE 1
+#define WLN_WPA 1
 const FIRMWARE_VERSION="{WM2000EV_IotCore 1.0.0}"
 const MAX_NUM_INTERFACES=4
 const BT_NAME="WM2000EV_IotCore"
@@ -38,6 +38,7 @@ include "super_i2c\trunk\super_i2c.tbh"
 include "libraries\tbt28.tbh"
 include "libraries\tbt29.tbh"
 include "ssi\trunk\ssi.tbh"
+include "wln\trunk\wln.tbh"
 
 
 'DECLARATIONS--------------------------------------------------------

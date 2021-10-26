@@ -354,3 +354,23 @@ function device_jwt_generator(byref aud as string, byref key as string, expiresI
 	's is your es256 in base 64 
 	device_jwt_generator=payload+"."+result
 end function
+
+sub callback_wln_rescan_for_better_ap()
+
+end sub 
+
+sub callback_wln_rescan_result(current_rssi as byte, scan_rssi as byte, different_ap as no_yes)
+	
+end sub
+
+sub callback_wln_starting_association()
+	
+end sub
+
+sub  callback_wln_ok()
+
+end sub 
+
+sub callback_wln_failure(wln_state as en_wln_status_codes)
+	
+end sub
