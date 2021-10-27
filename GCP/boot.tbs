@@ -1,5 +1,6 @@
 include "global.tbh"
 declare sub init_rgb_led_io()
+declare sub prepare_key(byref private_key as string)
 
 sub boot()
 	init_rgb_led_io()
@@ -25,8 +26,8 @@ sub boot()
     '================================================================
     bt.name=BT_NAME
     bt.emulation=PL_WLN_BT_EMULATION_MODE_MICROCHIP
-    bt.txbuffrq(1)
-    bt.rxbuffrq(1)
+    bt.txbuffrq(2)
+    bt.rxbuffrq(2)
     sys.buffalloc()
     bt.enable
     while bt.enabled=NO
@@ -117,11 +118,45 @@ sub boot()
 	dim registry_id as string=stg_get("SCID",0)
 	dim location_id as string=stg_get("LCID",0)
 	dim project_id as string=stg_get("PJID",0)
-	'dim private_key as string="-----BEGIN EC PRIVATE KEY-----\x0aMHcCAQEEILp7Ap9sETINHoOlHbagEzsIeFNSuJbQewOg/2USqfT2oAoGCCqGSM49\x0aAwEHoUQDQgAEtNwgzC44m9TrXsFwv6fgEU909IwDPT4GWTE87YETNxbm0LX8pW7t\x0aTZWHkFNAPqDv388k+nQ17GxwUYU0/Ys02A==\x0a-----END EC PRIVATE KEY-----"
-	dim private_key as string="-----BEGIN EC PRIVATE KEY-----\x0aMHcCAQEEIG1Y7HSqkPMhsT/ezBW0//mAVYjX3/c7D7h6j6G8Vg2loAoGCCqGSM49\x0aAwEHoUQDQgAEcthq3aJTvLNgQC9dEw7Y0VYD563jBpEZ2lJimjrij7IvDIoauX5g\x0as05sIrNkmCOW/wm0htNaqRN1VRrKidK+ww==\x0a-----END EC PRIVATE KEY-----"
+	dim private_key as string = stg_get("PK",0)
+	
+	prepare_key(private_key)
+	
 	iotcore_start(device_id, registry_id, location_id, project_id, private_key, PL_SOCK_INTERFACE_WLN)
 	led_pattern="R-G-B-R-G-B-R-G-B-"
 end sub
+
+
+sub prepare_key(byref private_key as string)
+	const ec_header_start = "-----BEGIN EC PRIVATE KEY-----"
+	const ec_hdr_end = "-----END EC PRIVATE KEY-----"
+	if len(private_key) = 255 then
+		private_key = left(private_key,254)
+	end if
+	private_key = private_key+"\x00"
+	
+	dim start_key as byte = instr(0,private_key, ec_header_start,1) + len(ec_header_start) - 1
+	dim end_key as byte = instr(0,private_key,ec_hdr_end ,1)-2
+	dim length as byte =  len(private_key)
+	
+	dim key as byte(255) = private_key 
+	dim i as byte = 0
+	for i = start_key to end_key 
+		if key(i) = &h20 then
+			key(i) = &h0a
+		end if
+	next i
+	
+	
+	private_key = key
+	private_key = left(private_key, length)
+	
+	sys.debugprint(private_key)
+	sys.debugprint("\r\n")
+	
+	
+end sub
+
 
 sub init_rgb_led_io()
 
