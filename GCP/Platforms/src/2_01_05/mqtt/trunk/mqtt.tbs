@@ -435,7 +435,7 @@ sub mqtt_sock_event(newstate as enum pl_sock_state, newstatesimple as enum pl_so
 		else
 #if TLS_AVAILABLE
 			if mqtt_server_address<>mqtt_server_ip then
-				sock.tlshandshake("")
+				sock.tlshandshake(mqtt_server_address)
 			else
 				sock.tlshandshake("")
 			end if

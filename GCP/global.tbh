@@ -4,7 +4,7 @@
 #define LUIS_DEBUG_PRINT 1
 #define WLN_AVAILABLE 1
 #define SIGNAL_STRENGTH_INDICATION 1
-'#define MQTT_CER_FILE "gtsltsr.crt"
+#define MQTT_CER_FILE "gtsltsr.crt"
 #define MQTT_LARGE_PACKETS 1
 #define MQTT_DEBUG_PRINT 1
 #define TLS_AVAILABLE 1
