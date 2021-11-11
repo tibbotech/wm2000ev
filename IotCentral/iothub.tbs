@@ -482,8 +482,8 @@ public function iothub_json_helper(byref original as string, byref attribute as 
 end function
 
 public sub iothub_mqtt_sub_ok()
-	num_of_suback=num_of_suback+1
-	if num_of_suback>4 then
+	iothub_num_of_suback=iothub_num_of_suback+1
+	if iothub_num_of_suback>4 then
 		iothub_rid=iothub_rid+1
 		mqtt_publish(IOTHUB_TOPIC_TWIN+"GET/?$rid="+str(iothub_rid),"{}",QOS_AT_MOST_ONCE)
 	end if

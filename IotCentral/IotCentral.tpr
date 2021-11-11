@@ -1,12 +1,12 @@
 [project]
 version=1
 platform=WM2000
-src_lib_ver=2_01_04
+src_lib_ver=2_01_05
 name=IotCentral
 output=IotCentral.tpc
 debug=on
-defines= /dLCD_TYPE=SOLOMON_SSD1963_FIXED_IO /dSUPPORTS_TLS=1 /dOBJECT_BT=BT_ENABLED /dOBJECT_LCD=LCD_ENABLED /dOBJECT_FD=FD_ENABLED /dOBJECT_KP=KP_ENABLED /dOBJECT_WLN=WLN_ENABLED
-transport=udp_broadcast
+defines= /dLCD_TYPE=SOLOMON_SSD1963_FIXED_IO /dSUPPORTS_TLS=1 /dOBJECT_LCD=LCD_ENABLED /dOBJECT_BT=BT_ENABLED /dOBJECT_FD=FD_ENABLED /dOBJECT_KP=KP_ENABLED /dOBJECT_WLN=WLN_ENABLED
+transport=serial
 [address1]
 platform=TPP2W(G2)
 transport=udp_broadcast
@@ -22,7 +22,7 @@ address=
 [address4]
 platform=WM2000
 transport=serial
-address=COM13:921600
+address=COM4:921600
 [address5]
 platform=WM2000
 transport=udp_winpcap
