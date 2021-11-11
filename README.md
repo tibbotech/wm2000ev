@@ -34,7 +34,7 @@ This project demonstrates the following functionality of the WM2000:
 
 Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_01).
 
-<br>
+---
 
 ### WebPWM ###
 This application showcases how the WM2000's pulse-width modulation (PWM) capabilities can be used to control the color output of the WM2000EV's RGB LED through a web-based interface.
@@ -49,7 +49,7 @@ This project demonstrates the following functionality of the WM2000:
 
 Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_02).
 
-<br>
+---
 
 ### Azure ###
 This application demonstrates the WM2000's ability to securely transmit data to leading cloud services provider Microsoft Azure, as well as receive commands to control the WM2000EV's built-in RGB LED. Two-way communications are crucial for implementing IIoT and industrial automation solutions.
@@ -67,3 +67,24 @@ This project demonstrates the following functionality of the WM2000:
 * Sending and receiving commands to play patterns of light through the integrated RGB LED
 
 Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_03).
+
+---
+
+### Google Cloud Platform ###
+This application demonstrates the WM2000's ability to connect to Google Cloud Platform (GCP). The cloud-services arm of the Internet search giant features a plethora of tools and APIs for data you host on the platform. This project uses the MQTT protocol to securely send data to GCP, as well as receive and execute commands received via the platform.
+
+A firmware update might be required due to a new API method to support JSON Web Tokens (JWT). In addition to demonstrating how JWTs are implemented in our API, their use simplifies maintaining a connection to GCP. For your convenience, we have made available a TCU file containing the firmware, Companion App, and this project. You can download the TCU file [here](https://tibbo.com/downloads/open/GCP_IoTCore-wm2000.tcu).
+
+This project demonstrates the following functionality of the WM2000:
+* Updating the firmware and dual compiled Tibbo BASIC application binaries via BLE
+* Using L.U.I.S. to configure the device over BLE
+* Automatic association with a Wi-Fi network
+* Scheduled, redundant, and secure data transmission through TLS
+* Polling the built-in light and temperature sensors
+* Storing data in the integrated flash disk
+* Time synchronization via an HTTP request
+* Sending and receiving commands to play patterns of light through the integrated RGB LED
+* Use of Tibbo's MQTT library to synchronize with the cloud
+* Authentication using JWTs
+
+Detailed, step-by-step instructions for using this application are available at [Tibbo Docs](https://docs.tibbo.com/phm/wm2000ev_demo_04).
