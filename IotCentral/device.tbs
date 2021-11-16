@@ -17,7 +17,7 @@ declare sub set_rgb_led(r as byte ,g as byte ,b as byte)
 declare sub device_led_play_pat()
 
 sub callback_dns_failure(status as en_dns_status_codes)
-	http_dns_failure(status)
+	http_dns_failure()
 end sub
         
 sub callback_dns_answer_acquired(return_type as en_dns_return_type, byref return_string as string)

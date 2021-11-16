@@ -592,13 +592,11 @@ function http_encode_url(unencoded_url as string) as string
 	
 end function
 
-sub http_dns_failure(status as en_dns_status_codes)
+sub http_dns_failure()
 	if http_request_item.domain_name<>dns_current_domain() then
 		exit sub
 	end if
-	if status<>EN_STATUS_DNS_BAD_ANSWER then
-		http_failed("DNS failure")
-	end if
+	http_failed("DNS failure")
 end sub 
 
 sub http_sock_state_update(newstatesimple as enum pl_sock_state_simple)
