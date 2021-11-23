@@ -11,7 +11,7 @@ const IOTHUB_API_VERSION="?api-version=2019-03-31"
 const IOTHUB_MQTT_API_VERSION="?api-version=2018-06-30"
 const TOPIC_TIMESTAMP="iothub-creation-time-utc="
 
-dim iothub_telemetry(IOTHUB_TELEMETRY_NUM) as struct_iothub_telemetry
+dim iothub_telemetry as struct_iothub_telemetry
 dim iothub_property(IOTHUB_PROPERTY_NUM) as struct_iothub_property
 dim iothub_command(IOTHUB_COMMAND_NUM) as struct_iothub_command
 dim iothub_state as en_iothub_states
@@ -97,14 +97,7 @@ function iothub_init() as ok_ng
 		item_type=iothub_get_descriptor_field(line_end,field_start_pos)
 		select case item_type
 		case "T":
-			if telemtry_index<IOTHUB_TELEMETRY_NUM then
-				iothub_telemetry(telemtry_index).name=s				
-			else
-				#if IOTHUB_DEBUG_PRINT
-					iothub_debugprint("ERROR: telemtry exceed pre-defined number.")
-				#endif
-				exit function
-			end if
+			iothub_telemetry.name=s				
 		case "P":
 			if property_index<IOTHUB_PROPERTY_NUM then
 				iothub_property(property_index).name=s
@@ -136,7 +129,7 @@ function iothub_init() as ok_ng
 
 		select case item_type
 		case "T":
-			iothub_telemetry(telemtry_index).value=""
+			iothub_telemetry.value=""
 			telemtry_index=telemtry_index+1				
 		case "P":
 			s=iothub_get_descriptor_field(line_end,field_start_pos)	
@@ -371,14 +364,9 @@ public sub iothub_update_telemetry(byref name as string, byref value as string)
 		exit sub
 	end if
 	
-	for i=0 to IOTHUB_TELEMETRY_NUM-1
-		if iothub_telemetry(i).updated=NO then
-			iothub_telemetry(i).name=name
-			iothub_telemetry(i).value=value
-			iothub_telemetry(i).updated=YES
-			exit sub
-		end if
-	next i
+	iothub_telemetry.name=name
+	iothub_telemetry.value=value
+	
 end sub
 
 public sub iothub_proc_timer()
@@ -488,15 +476,8 @@ end sub
 				exit sub
 			end if
 
-			s=""
-			for i=0 to IOTHUB_TELEMETRY_NUM-1
-				if iothub_telemetry(i).updated=YES then
-					iothub_telemetry(i).updated=NO
-					attribute=iothub_telemetry(i).name
-					value=iothub_telemetry(i).value
-					s=iothub_json_helper(s,attribute,value)
-				end if
-			next i
+			s=iothub_json_helper(s,iothub_telemetry.name,iothub_telemetry.value)
+				
 			
 			if ts<>"" then
 				pos=instr(1,server_bound_message_topic,TOPIC_TIMESTAMP,1)

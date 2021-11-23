@@ -7,10 +7,6 @@
 	#define IOTHUB_ITEM_NAME_LEN 10
 #endif
 
-#ifndef IOTHUB_TELEMETRY_NUM
-	#define IOTHUB_TELEMETRY_NUM 0
-#endif
-
 #ifndef IOTHUB_PROPERTY_NUM
 	#define IOTHUB_PROPERTY_NUM 0
 #endif
