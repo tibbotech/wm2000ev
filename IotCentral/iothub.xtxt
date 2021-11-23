@@ -1,10 +1,10 @@
->>temperature				T
->>light						T
+>>type				T
+>>value						T
 
 #define IOTHUB_DEBUG_PRINT 1
 #define IOTHUB_ITEM_NAME_LEN 16
 #define IOTHUB_ITEM_VALUE_LEN 32
-#define IOTHUB_TELEMETRY_NUM 2
+#define IOTHUB_TELEMETRY_NUM 10
 #define IOTHUB_PROPERTY_NUM 0
 #define IOTHUB_COMMAND_NUM 0
 	

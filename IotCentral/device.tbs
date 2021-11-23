@@ -12,7 +12,7 @@ declare sub time_to_str(byref ts_str as string(20),
 	byref time_mincount as word,
 	byref time_second_byte as byte)
 
-declare sub emulate_iot_device_telemetry()
+
 declare sub set_rgb_led(r as byte ,g as byte ,b as byte)
 declare sub device_led_play_pat()
 
@@ -60,14 +60,7 @@ sub callback_stg_vm_write(data_to_write as byte, address as word)
 end sub
 
 sub callback_on_telemetry_sent()
-	dim active_rec_num as word	
-	tbl_select("events","events")
-	tbl_get_num_records(active_rec_num,NO)
-	if active_rec_num>0 then
-		event_post_timer=1
-		tbl_record_delete(1)
-	end if			
-
+	
 end sub
 
 sub callback_iothub_command_triggered(byref command as string, byref params as string)
@@ -80,10 +73,8 @@ sub callback_iothub_command_triggered(byref command as string, byref params as s
 end sub
 
 public sub device_proc_timer()
-	dim daycounts, mincounts as word
-	dim seconds as byte
-	dim tbl_result as en_tbl_status_codes	
-	dim ts, light, temp as string(36)
+
+	dim light, temp as string(36)
 	
 	device_led_play_pat()
 	
@@ -93,50 +84,11 @@ public sub device_proc_timer()
 		sample_timer=SENSOR_SAMPLING_TIME
 		temp=ftostr(tbt29_get_c(TBT00_3_S1_CHANNEL_NUM),FTOSTR_MODE_AUTO,4)
 		light=str(tbt28_get(TBT00_3_S1_CHANNEL_NUM))
-		rtc.getdata(daycounts,mincounts,seconds)
-		time_to_str(ts,daycounts,mincounts,seconds)
-		ts=ts+".000Z"
-		sys.debugprint(ts+"\x0a"+temp+" C\x0a"+light+"\x0a")	
-		tbl_result=tbl_select("events","events")
-		tbl_result=tbl_field_sg("time",ts,EN_TBL_SET)
-		tbl_result=tbl_field_sg("temp",temp,EN_TBL_SET)
-		tbl_result=tbl_field_sg("light",light,EN_TBL_SET)
-		tbl_result=tbl_record_add("")			
+		
+		iothub_store_telemetry("temperature", temp)
+		iothub_store_telemetry("light", light)
 	end if 
-
-	if event_post_timer>0 then
-		event_post_timer=event_post_timer-1
-	else
-		event_post_timer=val(stg_get("EPT",0))
-		event_post_timer=event_post_timer*120
-		dim active_rec_num as word			
-		tbl_select("events","events")
-		tbl_get_num_records(active_rec_num,NO)
-		if active_rec_num>0 then
-			emulate_iot_device_telemetry()
-		end if			
-	end if
 	
-end sub
-
-sub emulate_iot_device_telemetry()
-
-	if iothub_state<>EN_IOTHUB_CONNECTED then
-		exit sub
-	end if
-
-	dim ts, light, temp as string(36)
-	
-	tbl_select("events","events")
-	if tbl_record_read_active(1)=EN_TBL_STATUS_OK	then
-		tbl_field_sg("time",ts,EN_TBL_GET)
-		tbl_field_sg("temp",temp,EN_TBL_GET)
-		tbl_field_sg("light",light,EN_TBL_GET)
-		iothub_update_telemetry("temperature",temp)
-		iothub_update_telemetry("light",light)	
-		iothub_send_telemetry(ts)		
-	end if	
-
 end sub
 
 sub callback_mqtt_connect_ok()
@@ -196,37 +148,7 @@ sub callback_luis_buzz_command()
 	
 end sub
 
-sub time_to_str(byref ts_str as string(20),	
-	byref time_daycount as word,
-	byref time_mincount as word,
-	byref time_second_byte as byte)
-	dim time_year_str, time_month_str, time_date_str, time_hour_str, time_minute_str, time_second_str as string(4)
 
-	time_year_str=str(year(time_daycount)+2000)
-	time_month_str=str(month(time_daycount))
-	time_date_str=str(date(time_daycount))
-	time_hour_str=str(hours(time_mincount))
-	time_minute_str=str(minutes(time_mincount))
-	time_second_str=str(time_second_byte)
-
-	if len(time_hour_str) < 2 then 
-		time_hour_str="0"+time_hour_str 
-	end if
-	if len(time_minute_str) < 2 then 
-		time_minute_str="0"+time_minute_str 
-	end if
-	if len(time_second_str) < 2 then 
-		time_second_str="0"+time_second_str 
-	end if
-	if len(time_date_str) < 2 then 
-		time_date_str="0"+time_date_str 
-	end if
-	if len(time_month_str) < 2 then 
-		time_month_str="0"+time_month_str 
-	end if
-	ts_str=time_year_str+"-"+time_month_str+"-"+time_date_str+"T"+time_hour_str+":"+time_minute_str+":"+time_second_str
-	
-end sub
 
 sub device_led_play_pat()
 	dim p as string(1)
