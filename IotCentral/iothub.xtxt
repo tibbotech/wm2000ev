@@ -1,9 +1,10 @@
 >>type				T
 >>value						T
+>>LedTest						C
 
 #define IOTHUB_DEBUG_PRINT 1
 #define IOTHUB_ITEM_NAME_LEN 16
 #define IOTHUB_ITEM_VALUE_LEN 32
-#define IOTHUB_PROPERTY_NUM 0
-#define IOTHUB_COMMAND_NUM 0
+#define IOTHUB_PROPERTY_NUM 1
+#define IOTHUB_COMMAND_NUM 1
 	

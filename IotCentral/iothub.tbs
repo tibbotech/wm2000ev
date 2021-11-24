@@ -11,7 +11,6 @@ const IOTHUB_API_VERSION="?api-version=2019-03-31"
 const IOTHUB_MQTT_API_VERSION="?api-version=2018-06-30"
 const TOPIC_TIMESTAMP="iothub-creation-time-utc="
 
-dim iothub_telemetry as struct_iothub_telemetry
 dim iothub_property(IOTHUB_PROPERTY_NUM) as struct_iothub_property
 dim iothub_command(IOTHUB_COMMAND_NUM) as struct_iothub_command
 dim iothub_state as en_iothub_states
@@ -97,7 +96,6 @@ function iothub_init() as ok_ng
 		item_type=iothub_get_descriptor_field(line_end,field_start_pos)
 		select case item_type
 		case "T":
-			iothub_telemetry.name=s				
 		case "P":
 			if property_index<IOTHUB_PROPERTY_NUM then
 				iothub_property(property_index).name=s
@@ -129,8 +127,6 @@ function iothub_init() as ok_ng
 
 		select case item_type
 		case "T":
-			iothub_telemetry.value=""
-			telemtry_index=telemtry_index+1				
 		case "P":
 			s=iothub_get_descriptor_field(line_end,field_start_pos)	
 			pos=instr(1,s,",",1)
@@ -354,18 +350,8 @@ public sub iothub_command_respond(byref command as string, byref returns as stri
 	#endif
 end sub
 
-public sub iothub_update_telemetry(byref name as string, byref value as string)
-	dim i as byte
+public sub iothub_update_telemetry()
 	
-	if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
-		#if IOTHUB_DEBUG_PRINT
-			iothub_debugprint("ERROR: iothub_init() wasn't used or failed")
-		#endif
-		exit sub
-	end if
-	
-	iothub_telemetry.name=name
-	iothub_telemetry.value=value
 	
 end sub
 
@@ -409,7 +395,7 @@ function iothub_get_descriptor_field(line_end_pos as word, byref field_start_pos
 	loop while iothub_get_descriptor_field="" 		
 end function
 
-public function iothub_json_helper(byref original as string, byref attribute as string, byref value as string) as string
+public function iothub_update_json(byref original as string, byref attribute as string, byref value as string) as string
 	if original="" then
 		original="{}"
 	end if
@@ -420,15 +406,15 @@ public function iothub_json_helper(byref original as string, byref attribute as 
 		
 	if original="{}" then
 		if left(value,1)="{" and right(value,1)="}" then
-			iothub_json_helper="{\x22"+attribute+"\x22:"+value+"}"
+			iothub_update_json="{\x22"+attribute+"\x22:"+value+"}"
 		else
-			iothub_json_helper="{\x22"+attribute+"\x22:\x22"+value+"\x22}"
+			iothub_update_json="{\x22"+attribute+"\x22:\x22"+value+"\x22}"
 		end if
 	else
 		if left(value,1)="{" and right(value,1)="}" then
-			iothub_json_helper=left(original,len(original)-1)+","+"\x22"+attribute+"\x22:"+value+"}"
+			iothub_update_json=left(original,len(original)-1)+","+"\x22"+attribute+"\x22:"+value+"}"
 		else
-			iothub_json_helper=left(original,len(original)-1)+","+"\x22"+attribute+"\x22:\x22"+value+"\x22}"
+			iothub_update_json=left(original,len(original)-1)+","+"\x22"+attribute+"\x22:\x22"+value+"\x22}"
 		end if
 	end if
 end function
@@ -446,59 +432,68 @@ public sub iothub_on_ip_otained()
 	
 end sub
 
- public sub iothub_send_telemetry()
+public sub iothub_send_telemetry()
 
 	if iothub_state<>EN_IOTHUB_CONNECTED then
 		exit sub
 	end if
 	
-	dim active_rec_num as word			
-	tbl_select("events","events")
-	tbl_get_num_records(active_rec_num,NO)
-	if active_rec_num>0 then
-		dim ts, record_type, record_value as string(36)
-		tbl_select("events","events")
-		if tbl_record_read_active(1)=EN_TBL_STATUS_OK then
-			tbl_field_sg("time",ts,EN_TBL_GET)
-			tbl_field_sg("type", record_type,EN_TBL_GET)
-			tbl_field_sg("value",record_value ,EN_TBL_GET)	
-			iothub_update_telemetry(record_type,record_value)
-			dim i as byte
-			dim s as string
-			dim value as string
-			dim attribute as string(IOTHUB_ITEM_NAME_LEN)
-			dim pos as byte
-			
-			if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
-				#if IOTHUB_DEBUG_PRINT
-					iothub_debugprint("ERROR: iothub_init() wasn't used or failed")
-				#endif
-				exit sub
-			end if
+	if iothub_init_flag<>IOTHUB_INIT_SIGNATURE then
+		#if IOTHUB_DEBUG_PRINT
+			iothub_debugprint("ERROR: iothub_init() wasn't used or failed")
+		#endif
+		exit sub
+	end if
+	
+	dim ts as string(36)
+	dim same_ts as boolean = true
+	dim json as string
 
-			s=iothub_json_helper(s,iothub_telemetry.name,iothub_telemetry.value)
-				
-			
-			if ts<>"" then
-				pos=instr(1,server_bound_message_topic,TOPIC_TIMESTAMP,1)
-				if pos>0 then
-					server_bound_message_topic=left(server_bound_message_topic,pos-1)+TOPIC_TIMESTAMP+ts
+	while same_ts = true
+		dim active_rec_num as word			
+		tbl_select("events","events")
+		tbl_get_num_records(active_rec_num,NO)
+		if active_rec_num>0 then
+			if tbl_record_read_active(1)=EN_TBL_STATUS_OK then
+				dim record_type, record_value as string(36)
+				tbl_field_sg("time",ts,EN_TBL_GET)
+				tbl_field_sg("type", record_type,EN_TBL_GET)
+				tbl_field_sg("value",record_value ,EN_TBL_GET)	
+				tbl_record_delete(1)	
+				json=iothub_update_json(json,record_type,record_value)
+				dim next_ts as string
+				tbl_get_num_records(active_rec_num,NO)
+				if active_rec_num>0 then
+					if tbl_record_read_active(1)=EN_TBL_STATUS_OK then
+						tbl_field_sg("time",next_ts,EN_TBL_GET)
+						if ts <> next_ts then
+							same_ts = false
+						end if
+					end if
 				else
-					server_bound_message_topic=server_bound_message_topic+TOPIC_TIMESTAMP+ts
-				end if
+					same_ts = false
+				end if				
 			end if
-			sock.num=mqtt_sock_num
-			sock.notifysent(0)
-			mqtt_publish(server_bound_message_topic,s,QOS_AT_MOST_ONCE)
-			dim active_rec_num as word	
-			tbl_select("events","events")
-			tbl_get_num_records(active_rec_num,NO)
-			if active_rec_num>0 then
-				tbl_record_delete(1)
-			end if		
-			callback_on_telemetry_sent()
-			end	if
-	end if			
+		else
+			exit sub
+		end if
+	wend
+	
+			
+	dim pos as byte
+	if ts<>"" then
+		pos=instr(1,server_bound_message_topic,TOPIC_TIMESTAMP,1)
+		if pos>0 then
+			server_bound_message_topic=left(server_bound_message_topic,pos-1)+TOPIC_TIMESTAMP+ts
+		else
+			server_bound_message_topic=server_bound_message_topic+TOPIC_TIMESTAMP+ts
+		end if
+	end if
+	
+	sock.num=mqtt_sock_num
+	sock.notifysent(0)
+	mqtt_publish(server_bound_message_topic,json,QOS_AT_MOST_ONCE)					
+	callback_on_telemetry_sent()
 
 end sub
 
@@ -557,16 +552,6 @@ public sub iothub_on_telemetry_sent()
 		exit sub
 	end if
 	iothub_send_telemetry()
-
-'	iothub_sending_telemetry=NO
-'	dim active_rec_num as word	
-'	tbl_select("events","events")
-'	tbl_get_num_records(active_rec_num,NO)
-'	if active_rec_num>0 then
-'		tbl_record_delete(1)
-'	end if		
-'	iothub_send_telemetry()
-'	callback_on_telemetry_sent()
 end sub
 
 public sub iothub_dps_connect(byref target_ip as string)
