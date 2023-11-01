@@ -1,8 +1,9 @@
 I=GEN;D=General;T=GROUP;
 I=SSID;T=STRING;D=SSID;C=EDIT;xIndex=1;
 I=KEY;T=STRING;D=WiFi password;C=EDIT;xIndex=2;
-I=SCID;T=STRING;D=Scope ID;C=EDIT;xIndex=3;
-I=DVID;T=STRING;D=Device ID;C=EDIT;xIndex=4;
-I=PKEY;T=STRING;D=Primary key;C=EDIT;xIndex=5;
-I=EPT;T=WORD;D=Event posting time (minute);C=EDIT;xIndex=6;
+I=DPSS;T=STRING;D=DPS Server;C=EDIT;xIndex=3;
+I=SCID;T=STRING;D=Scope ID;C=EDIT;xIndex=4;
+I=DVID;T=STRING;D=Device ID;C=EDIT;xIndex=5;
+I=PKEY;T=STRING;D=Primary key;C=EDIT;xIndex=6;
+I=EPT;T=WORD;D=Event posting time (minute);C=EDIT;xIndex=7;
 @@STG_RefPath=settings.xtxt

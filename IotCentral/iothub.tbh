@@ -19,10 +19,6 @@
 	#define IOTHUB_DESCRIPTOR_FILE "iothub.xtxt"
 #endif
 
-#ifndef IOTHUB_DPS_TLS_CER
-	#define IOTHUB_DPS_TLS_CER "azure.cer"
-#endif
-
 #define MQTT_NOTIFY_SENT 1
 	
 enum en_iothub_command_codes

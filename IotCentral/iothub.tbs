@@ -562,8 +562,12 @@ public sub iothub_dps_connect(byref target_ip as string)
 		sock.targetip=ddstr(target_ip)
 	end if
 	sock.targetinterface=iothub_interface
-	romfile.open(IOTHUB_DPS_TLS_CER)
-	sock.tlsinit(romfile.offset)  'check return state
+	#ifdef IOTHUB_DPS_TLS_CER
+		romfile.open(IOTHUB_DPS_TLS_CER)
+		sock.tlsinit(romfile.offset)  'check return state
+	#else
+		sock.tlsinit(0)  'check return state
+	#endif
 	sock.rxclear()
 	sock.txclear()	
 	sock.connect()
